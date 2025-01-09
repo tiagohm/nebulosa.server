@@ -1,8 +1,23 @@
-import { Elysia } from 'elysia'
+import { Elysia, t } from 'elysia'
+import cameras from '../data/cameras.json' with { type: 'json' }
+import telescopes from '../data/telescopes.json' with { type: 'json' }
 
-function openImage() {}
+const OpenImageQuery = t.Object({
+	path: t.String(),
+	camera: t.Optional(t.String()),
+})
 
-function closeImage() {}
+function openImage(data: typeof OpenImageQuery.static) {
+	//
+}
+
+const CloseImageQuery = t.Object({
+	path: t.String(),
+})
+
+function closeImage(data: typeof CloseImageQuery.static) {
+	//
+}
 
 function saveImage() {}
 
@@ -14,19 +29,15 @@ function coordinateInterpolation() {}
 
 function statistics() {}
 
-function fovCameras() {}
-
-function fovTelescopes() {}
-
 export function image() {
 	return new Elysia({ prefix: '/image' })
-		.post('/open', () => openImage())
-		.post('/close', () => closeImage())
+		.post('/open', ({ query }) => openImage(query), { query: OpenImageQuery })
+		.post('/close', ({ query }) => closeImage(query), { query: CloseImageQuery })
 		.post('/save', () => saveImage())
 		.post('/analyze', () => analyzeImage())
 		.post('/annotate', () => annotateImage())
 		.get('/coordinate-interpolation', () => coordinateInterpolation())
 		.post('/statistics', () => statistics())
-		.get('/fov-cameras', () => fovCameras())
-		.get('/fov-telescopes', () => fovTelescopes())
+		.get('/fov-cameras', () => cameras)
+		.get('/fov-telescopes', () => telescopes)
 }

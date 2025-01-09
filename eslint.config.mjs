@@ -45,6 +45,7 @@ export default tseslint.config(
 			'@typescript-eslint/no-unsafe-return': 'off',
 			'@typescript-eslint/no-extraneous-class': 'off',
 			'@typescript-eslint/no-non-null-assertion': 'off',
+			'@typescript-eslint/no-confusing-void-expression': 'off',
 			'@typescript-eslint/consistent-type-imports': 'error',
 			'@typescript-eslint/no-empty-interface': 'error',
 			'@typescript-eslint/consistent-return': 'error',

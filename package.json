@@ -7,10 +7,17 @@
 		"prettier": "prettier \"**/*.ts\" --write"
 	},
 	"dependencies": {
-		"elysia": "1.2.10"
+		"elysia": "1.2.10",
+		"nebulosa": "github:tiagohm/nebulosa.ts"
+	},
+	"devDependencies": {
+		"eslint": "latest",
+		"prettier": "latest",
+		"typescript-eslint": "latest"
 	},
 	"peerDependencies": {
 		"@types/bun": "latest",
+		"@types/node": "latest",
 		"typescript": "~5.7.3"
 	}
 }
