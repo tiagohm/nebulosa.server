@@ -2,6 +2,13 @@
 	"name": "nebulosa-server",
 	"module": "main.ts",
 	"type": "module",
+	"scripts": {
+		"lint": "eslint .",
+		"prettier": "prettier \"**/*.ts\" --write"
+	},
+	"dependencies": {
+		"elysia": "1.2.10"
+	},
 	"peerDependencies": {
 		"@types/bun": "latest",
 		"typescript": "~5.7.3"
