@@ -1,0 +1,9 @@
+{
+	"name": "nebulosa-server",
+	"module": "main.ts",
+	"type": "module",
+	"peerDependencies": {
+		"@types/bun": "latest",
+		"typescript": "~5.7.3"
+	}
+}
