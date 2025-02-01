@@ -1,23 +1,34 @@
-import { Elysia, t } from 'elysia'
-import cameras from '../data/cameras.json' with { type: 'json' }
-import telescopes from '../data/telescopes.json' with { type: 'json' }
+import { Elysia, type Static, t } from 'elysia'
+import cameras from '../data/cameras.json'
+import telescopes from '../data/telescopes.json'
 
 const OpenImageQuery = t.Object({
 	path: t.String(),
 	camera: t.Optional(t.String()),
 })
 
-function openImage(data: typeof OpenImageQuery.static) {
-	//
-}
+export type OpenImage = Readonly<Static<typeof OpenImageQuery>>
 
 const CloseImageQuery = t.Object({
 	path: t.String(),
 })
 
-function closeImage(data: typeof CloseImageQuery.static) {
-	//
-}
+export type CloseImage = Readonly<Static<typeof CloseImageQuery>>
+
+export const image = new Elysia({ prefix: '/image' })
+	.post('/open', ({ query }) => openImage(query), { query: OpenImageQuery })
+	.post('/close', ({ query }) => closeImage(query), { query: CloseImageQuery })
+	.post('/save', () => saveImage())
+	.post('/analyze', () => analyzeImage())
+	.post('/annotate', () => annotateImage())
+	.get('/coordinate-interpolation', () => coordinateInterpolation())
+	.post('/statistics', () => statistics())
+	.get('/fov-cameras', () => cameras)
+	.get('/fov-telescopes', () => telescopes)
+
+function openImage(q: OpenImage) {}
+
+function closeImage(q: CloseImage) {}
 
 function saveImage() {}
 
@@ -28,16 +39,3 @@ function annotateImage() {}
 function coordinateInterpolation() {}
 
 function statistics() {}
-
-export function image() {
-	return new Elysia({ prefix: '/image' })
-		.post('/open', ({ query }) => openImage(query), { query: OpenImageQuery })
-		.post('/close', ({ query }) => closeImage(query), { query: CloseImageQuery })
-		.post('/save', () => saveImage())
-		.post('/analyze', () => analyzeImage())
-		.post('/annotate', () => annotateImage())
-		.get('/coordinate-interpolation', () => coordinateInterpolation())
-		.post('/statistics', () => statistics())
-		.get('/fov-cameras', () => cameras)
-		.get('/fov-telescopes', () => telescopes)
-}
