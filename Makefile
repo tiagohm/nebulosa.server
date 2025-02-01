@@ -1,4 +1,4 @@
-.PHONY: run lint prettier test compile
+.PHONY: run lint format test compile
 
 run:
 	bun --watch .
@@ -6,8 +6,8 @@ run:
 lint:
 	bun lint
 
-prettier:
-	bun prettier
+format:
+	bun format
 
 test:
 	bun test --timeout 1000
