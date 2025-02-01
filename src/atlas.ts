@@ -126,7 +126,7 @@ function positionOfSatellite() {}
 function altitudePointsOfSatellite(q: AltitudePointsOfSatellite) {}
 
 async function computeEphemeris(code: string, date: Date, longitude: number, latitude: Angle, elevation: Distance) {
-	const time = Math.trunc(date.getTime() / 1000)
+	const time = timeWithoutSeconds(date.getTime())
 
 	const position = BODY_POSITIONS.get(code)?.get(time)
 	if (position) return position
@@ -148,7 +148,7 @@ function computeAltitudePoints(code: string, date: Date, stepSizeInMinutes: numb
 
 	let startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0)
 	if (date.getHours() < 12) startTime = new Date(startTime.getTime() - 86400000)
-	const time = Math.trunc(startTime.getTime() / 1000)
+	const time = timeWithoutSeconds(startTime.getTime())
 	const altitude: number[] = []
 
 	altitude.push(positions.get(time)!.altitude)
@@ -176,7 +176,7 @@ function makeBodyPositionFromEphemeris(ephemeris: ObserverTable): readonly [numb
 		}
 
 		return [
-			Math.trunc(new Date(`${e[0]}Z`).getTime() / 1000),
+			timeWithoutSeconds(new Date(`${e[0]}Z`).getTime()),
 			{
 				rightAscensionJ2000: parseAngle(e[1]),
 				declinationJ2000: parseAngle(e[2]),
@@ -194,4 +194,10 @@ function makeBodyPositionFromEphemeris(ephemeris: ObserverTable): readonly [numb
 			} as BodyPosition,
 		]
 	})
+}
+
+function timeWithoutSeconds(timestamp: number) {
+	const seconds = Math.trunc(timestamp / 1000)
+	const remaining = Math.trunc(seconds % 60)
+	return seconds - remaining
 }

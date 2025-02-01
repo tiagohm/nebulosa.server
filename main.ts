@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia'
+import { atlas } from './src/atlas'
 import { image } from './src/image'
 
-const app = new Elysia().use(image).listen(3000)
+const app = new Elysia().use(atlas).use(image).listen(3000)
