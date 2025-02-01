@@ -17,5 +17,8 @@ compile:
 	bun build --compile --minify --bytecode . --outfile nebulosa.exe
 else
 compile:
-	bun build --compile --minify --bytecode . --outfile nebulosa
+	bun build --compile --minify --bytecode . --outfile nebulosa.out
+
+serve: compile
+	./nebulosa.out
 endif
