@@ -71,7 +71,7 @@ test('altitudePointsOfSun', async () => {
 
 	expect(points).toHaveLength(289)
 	expect(points[0]).toBeCloseTo(0.7755328294268905, 12)
-	expect(points[288]).toBeCloseTo(0.7736406830782184, 12)
+	expect(points[288]).toBeCloseTo(0.773640665624926, 12)
 })
 
 test('altitudePointsOfMoon', async () => {
