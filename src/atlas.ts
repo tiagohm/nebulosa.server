@@ -1,12 +1,20 @@
 import { Elysia, type Static, t } from 'elysia'
 import { type Angle, deg, parseAngle } from 'nebulosa/src/angle'
 import { AU_KM, SPEED_OF_LIGHT } from 'nebulosa/src/constants'
+import type { CsvRow } from 'nebulosa/src/csv'
+import { type DateTime, dateFrom } from 'nebulosa/src/datetime'
 import { type Distance, meter } from 'nebulosa/src/distance'
-import { type ObserverTable, Quantity, observer } from 'nebulosa/src/horizons'
+import { Quantity, observer } from 'nebulosa/src/horizons'
 
-const LOCATION_QUERY = t.Object({ longitude: t.Number({ minimum: -180, maximum: 180 }), latitude: t.Number({ minimum: -90, maximum: 90 }), elevation: t.Number() })
+const LOCATION_QUERY = t.Object({
+	longitude: t.Number({ minimum: -180, maximum: 180 }),
+	latitude: t.Number({ minimum: -90, maximum: 90 }),
+	elevation: t.Number(),
+})
 
-const DATE_TIME_QUERY = t.Object({ dateTime: t.String() })
+const DATE_TIME_QUERY = t.Object({
+	dateTime: t.String(),
+})
 
 const POSITION_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, LOCATION_QUERY])
 
@@ -15,22 +23,6 @@ const ALTITUDE_POINTS_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, t.Object({ s
 const BODY_POSITIONS = new Map<string, Map<number, Readonly<BodyPosition>>>()
 
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
-
-export interface BodyPosition {
-	rightAscensionJ2000: number
-	declinationJ2000: number
-	rightAscension: number
-	declination: number
-	azimuth: number
-	altitude: number
-	magnitude: number
-	constellation: string
-	distance: number
-	distanceUnit: string
-	illuminated: number
-	elongation: number
-	leading: boolean
-}
 
 export type Location = Readonly<Static<typeof LOCATION_QUERY>>
 
@@ -53,6 +45,22 @@ export type AltitudePointsOfPlanet = Readonly<Static<typeof ALTITUDE_POINTS_OF_B
 export type AltitudePointsOfSkyObject = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
 
 export type AltitudePointsOfSatellite = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
+
+export interface BodyPosition {
+	rightAscensionJ2000: number
+	declinationJ2000: number
+	rightAscension: number
+	declination: number
+	azimuth: number
+	altitude: number
+	magnitude: number
+	constellation: string
+	distance: number
+	distanceUnit: string
+	illuminated: number
+	elongation: number
+	leading: boolean
+}
 
 export const atlas = new Elysia({ prefix: '/atlas' })
 	.get('/sun/image', () => imageOfSun())
@@ -78,21 +86,21 @@ export const atlas = new Elysia({ prefix: '/atlas' })
 function imageOfSun() {}
 
 function positionOfSun(q: PositionOfSun) {
-	return computeEphemeris('10', new Date(q.dateTime), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+	return computeEphemeris('10', dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
 }
 
 function altitudePointsOfSun(q: AltitudePointsOfSun) {
-	return computeAltitudePoints('10', new Date(q.dateTime), q.stepSize)
+	return computeAltitudePoints('10', dateFrom(q.dateTime, true), q.stepSize)
 }
 
 function earthSeasons() {}
 
 function positionOfMoon(q: PositionOfMoon) {
-	return computeEphemeris('301', new Date(q.dateTime), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+	return computeEphemeris('301', dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
 }
 
 function altitudePointsOfMoon(q: AltitudePointsOfMoon) {
-	return computeAltitudePoints('301', new Date(q.dateTime), q.stepSize)
+	return computeAltitudePoints('301', dateFrom(q.dateTime, true), q.stepSize)
 }
 
 function moonPhases() {}
@@ -100,11 +108,11 @@ function moonPhases() {}
 function twilight() {}
 
 function positionOfPlanet(code: string, q: PositionOfPlanet) {
-	return computeEphemeris(code, new Date(q.dateTime), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+	return computeEphemeris(code, dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
 }
 
 function altitudePointsOfPlanet(code: string, q: AltitudePointsOfPlanet) {
-	return computeAltitudePoints(code, new Date(q.dateTime), q.stepSize)
+	return computeAltitudePoints(code, dateFrom(q.dateTime, true), q.stepSize)
 }
 
 function searchMinorPlanet() {}
@@ -125,15 +133,15 @@ function positionOfSatellite() {}
 
 function altitudePointsOfSatellite(q: AltitudePointsOfSatellite) {}
 
-async function computeEphemeris(code: string, date: Date, longitude: number, latitude: Angle, elevation: Distance) {
-	const time = timeWithoutSeconds(date.getTime())
+async function computeEphemeris(code: string, dateTime: DateTime, longitude: number, latitude: Angle, elevation: Distance) {
+	const time = timeWithoutSeconds(dateTime)
 
 	const position = BODY_POSITIONS.get(code)?.get(time)
 	if (position) return position
 
-	let startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0)
-	if (date.getHours() < 12) startTime = new Date(startTime.getTime() - 86400000)
-	const endTime = new Date(startTime.getTime() + 86400000)
+	let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
+	if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
+	const endTime = startTime.add(1, 'day')
 
 	const ephemeris = await observer(code, 'coord', [longitude, latitude, elevation], startTime, endTime, HORIZONS_QUANTITIES)
 	const positions = makeBodyPositionFromEphemeris(ephemeris!)
@@ -143,12 +151,12 @@ async function computeEphemeris(code: string, date: Date, longitude: number, lat
 	return map.get(time)
 }
 
-function computeAltitudePoints(code: string, date: Date, stepSizeInMinutes: number) {
+function computeAltitudePoints(code: string, dateTime: DateTime, stepSizeInMinutes: number) {
 	const positions = BODY_POSITIONS.get(code)!
 
-	let startTime = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0)
-	if (date.getHours() < 12) startTime = new Date(startTime.getTime() - 86400000)
-	const time = timeWithoutSeconds(startTime.getTime())
+	let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
+	if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
+	const time = timeWithoutSeconds(startTime)
 	const altitude: number[] = []
 
 	altitude.push(positions.get(time)!.altitude)
@@ -162,9 +170,11 @@ function computeAltitudePoints(code: string, date: Date, stepSizeInMinutes: numb
 	return altitude
 }
 
-function makeBodyPositionFromEphemeris(ephemeris: ObserverTable): readonly [number, BodyPosition][] {
-	return ephemeris.data.map((e) => {
-		const lightTime = parseFloat(e[9]) || 0
+function makeBodyPositionFromEphemeris(ephemeris: CsvRow[]): readonly [number, BodyPosition][] {
+	ephemeris.splice(0, 1)
+
+	return ephemeris.map((e) => {
+		const lightTime = parseFloat(e[11]) || 0
 		let distance = lightTime * (SPEED_OF_LIGHT * 0.06) // km
 		let distanceUnit = 'km'
 
@@ -176,28 +186,28 @@ function makeBodyPositionFromEphemeris(ephemeris: ObserverTable): readonly [numb
 		}
 
 		return [
-			timeWithoutSeconds(new Date(`${e[0]}Z`).getTime()),
+			timeWithoutSeconds(dateFrom(`${e[0]}Z`)),
 			{
-				rightAscensionJ2000: parseAngle(e[1]),
-				declinationJ2000: parseAngle(e[2]),
-				rightAscension: parseAngle(e[3]),
-				declination: parseAngle(e[4]),
-				azimuth: parseAngle(e[5]),
-				altitude: parseAngle(e[6]),
-				magnitude: parseFloat(e[7]),
-				constellation: e[13].toUpperCase(),
+				rightAscensionJ2000: parseAngle(e[3]),
+				declinationJ2000: parseAngle(e[4]),
+				rightAscension: parseAngle(e[5]),
+				declination: parseAngle(e[6]),
+				azimuth: parseAngle(e[7]),
+				altitude: parseAngle(e[8]),
+				magnitude: parseFloat(e[9]),
+				constellation: e[15].toUpperCase(),
 				distance,
 				distanceUnit,
-				illuminated: parseFloat(e[10]),
-				elongation: parseAngle(e[11]),
-				leading: e[12] === '/L',
+				illuminated: parseFloat(e[12]),
+				elongation: parseAngle(e[13]),
+				leading: e[14] === '/L',
 			} as BodyPosition,
 		]
 	})
 }
 
-function timeWithoutSeconds(timestamp: number) {
-	const seconds = Math.trunc(timestamp / 1000)
+function timeWithoutSeconds(dateTime: DateTime) {
+	const seconds = dateTime.unix()
 	const remaining = Math.trunc(seconds % 60)
 	return seconds - remaining
 }

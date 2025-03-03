@@ -7,13 +7,11 @@
 		"format": "biome format --write src/"
 	},
 	"dependencies": {
-		"elysia": "1.2.10",
+		"elysia": "1.2.24",
 		"nebulosa": "github:tiagohm/nebulosa.ts"
 	},
 	"devDependencies": {
-		"@biomejs/biome": "latest"
-	},
-	"peerDependencies": {
+		"@biomejs/biome": "latest",
 		"@types/bun": "latest",
 		"@types/node": "latest"
 	},

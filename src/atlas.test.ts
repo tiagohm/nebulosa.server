@@ -1,6 +1,8 @@
 import { expect, test } from 'bun:test'
 import { type BodyPosition, atlas } from './atlas'
 
+process.env.TZ = 'America/Sao_Paulo'
+
 test('positionOfSun', async () => {
 	const request = new Request('http://localhost/atlas/sun/position?dateTime=2025-01-31T21:36:00&longitude=-45&latitude=-23&elevation=890')
 	const response = await atlas.handle(request)
