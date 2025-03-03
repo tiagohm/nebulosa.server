@@ -1,6 +1,6 @@
 import { expect, test } from 'bun:test'
 import type { HipsSurvey } from 'nebulosa/src/hips2fits'
-import { framing } from './framing'
+import { framing } from '../src/framing'
 
 process.env.TZ = 'America/Sao_Paulo'
 

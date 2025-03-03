@@ -1,5 +1,5 @@
 import { expect, test } from 'bun:test'
-import { type BodyPosition, atlas } from './atlas'
+import { type BodyPosition, atlas } from '../src/atlas'
 
 process.env.TZ = 'America/Sao_Paulo'
 
