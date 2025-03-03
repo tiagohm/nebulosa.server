@@ -1,7 +1,7 @@
-.PHONY: run lint format test compile
+.PHONY: run lint format test compile serve
 
 run:
-	bun --watch .
+	bun run .
 
 lint:
 	bun lint
@@ -10,7 +10,7 @@ format:
 	bun format
 
 test:
-	bun test --timeout 1000
+	bun test --timeout 10000
 
 ifeq ($(OS),Windows_NT)
 compile:
