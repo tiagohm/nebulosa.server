@@ -1,0 +1,27 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+        paths:
+            - 'src/**.ts'
+            - 'package.json'
+            - 'tsconfig.json'
+            - 'data/**'
+    pull_request:
+        paths:
+            - 'src/**.ts'
+            - 'package.json'
+            - 'tsconfig.json'
+            - 'data/**'
+    workflow_dispatch:
+
+jobs:
+    test:
+        name: Test
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v4
+            - uses: oven-sh/setup-bun@v2
+            - run: bun install --production
+            - run: bun test --timeout 1000
