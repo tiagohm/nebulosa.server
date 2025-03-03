@@ -62,26 +62,28 @@ export interface BodyPosition {
 	leading: boolean
 }
 
-export const atlas = new Elysia({ prefix: '/atlas' })
-	.get('/sun/image', () => imageOfSun())
-	.get('/sun/position', ({ query }) => positionOfSun(query), { query: POSITION_OF_BODY_QUERY })
-	.get('/sun/altitude-points', ({ query }) => altitudePointsOfSun(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-	.get('/earth/seasons', () => earthSeasons())
-	.get('/moon/position', ({ query }) => positionOfMoon(query), { query: POSITION_OF_BODY_QUERY })
-	.get('/moon/altitude-points', ({ query }) => altitudePointsOfMoon(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-	.get('/moon/phases', () => moonPhases())
-	.get('/twilight', () => twilight())
-	.get('/planets/:code/position', ({ query, params: { code } }) => positionOfPlanet(code, query), { query: POSITION_OF_BODY_QUERY })
-	.get('/planets/:code/altitude-points', ({ query, params: { code } }) => altitudePointsOfPlanet(code, query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-	.get('/minor-planets', () => searchMinorPlanet())
-	.get('/minor-planets/close-approaches', () => closeApproachesForMinorPlanets())
-	.get('/sky-objects', () => searchSkyObject())
-	.get('/sky-objects/types', () => skyObjectTypes())
-	.get('/sky-objects/:id/position', ({ query, params: { id } }) => positionOfSkyObject())
-	.get('/sky-objects/:id/altitude-points', ({ query }) => altitudePointsOfSkyObject(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-	.get('/satellites', () => searchSatellites())
-	.get('/satellites/:id/position', ({ query, params: { id } }) => positionOfSatellite())
-	.get('/satellites/:id/altitude-points', ({ query }) => altitudePointsOfSatellite(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+export function atlas() {
+	return new Elysia({ prefix: '/atlas' })
+		.get('/sun/image', () => imageOfSun())
+		.get('/sun/position', ({ query }) => positionOfSun(query), { query: POSITION_OF_BODY_QUERY })
+		.get('/sun/altitude-points', ({ query }) => altitudePointsOfSun(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/earth/seasons', () => earthSeasons())
+		.get('/moon/position', ({ query }) => positionOfMoon(query), { query: POSITION_OF_BODY_QUERY })
+		.get('/moon/altitude-points', ({ query }) => altitudePointsOfMoon(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/moon/phases', () => moonPhases())
+		.get('/twilight', () => twilight())
+		.get('/planets/:code/position', ({ query, params: { code } }) => positionOfPlanet(code, query), { query: POSITION_OF_BODY_QUERY })
+		.get('/planets/:code/altitude-points', ({ query, params: { code } }) => altitudePointsOfPlanet(code, query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/minor-planets', () => searchMinorPlanet())
+		.get('/minor-planets/close-approaches', () => closeApproachesForMinorPlanets())
+		.get('/sky-objects', () => searchSkyObject())
+		.get('/sky-objects/types', () => skyObjectTypes())
+		.get('/sky-objects/:id/position', ({ query, params: { id } }) => positionOfSkyObject())
+		.get('/sky-objects/:id/altitude-points', ({ query }) => altitudePointsOfSkyObject(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/satellites', () => searchSatellites())
+		.get('/satellites/:id/position', ({ query, params: { id } }) => positionOfSatellite())
+		.get('/satellites/:id/altitude-points', ({ query }) => altitudePointsOfSatellite(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+}
 
 function imageOfSun() {}
 

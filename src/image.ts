@@ -68,16 +68,18 @@ export interface CachedImage {
 	image?: Image
 }
 
-export const image = new Elysia({ prefix: '/image' })
-	.post('/open', ({ query, body }) => openImage(query, body), { query: OPEN_IMAGE_QUERY, body: IMAGE_TRANSFORMATION_QUERY })
-	.post('/close', ({ query }) => closeImage(query), { query: CLOSE_IMAGE_QUERY })
-	.post('/save', () => saveImage())
-	.post('/analyze', () => analyzeImage())
-	.post('/annotate', () => annotateImage())
-	.get('/coordinate-interpolation', () => coordinateInterpolation())
-	.post('/statistics', () => statistics())
-	.get('/fov-cameras', () => cameras)
-	.get('/fov-telescopes', () => telescopes)
+export function image() {
+	return new Elysia({ prefix: '/image' })
+		.post('/open', ({ query, body }) => openImage(query, body), { query: OPEN_IMAGE_QUERY, body: IMAGE_TRANSFORMATION_QUERY })
+		.post('/close', ({ query }) => closeImage(query), { query: CLOSE_IMAGE_QUERY })
+		.post('/save', () => saveImage())
+		.post('/analyze', () => analyzeImage())
+		.post('/annotate', () => annotateImage())
+		.get('/coordinate-interpolation', () => coordinateInterpolation())
+		.post('/statistics', () => statistics())
+		.get('/fov-cameras', () => cameras)
+		.get('/fov-telescopes', () => telescopes)
+}
 
 const images = new Map<string, CachedImage>()
 

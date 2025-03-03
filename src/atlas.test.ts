@@ -3,9 +3,11 @@ import { type BodyPosition, atlas } from './atlas'
 
 process.env.TZ = 'America/Sao_Paulo'
 
+const service = atlas()
+
 test('positionOfSun', async () => {
 	const request = new Request('http://localhost/atlas/sun/position?dateTime=2025-01-31T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const position = (await response.json()) as BodyPosition
 
 	expect(position.rightAscensionJ2000).toBeCloseTo(5.487010782848625, 12)
@@ -25,7 +27,7 @@ test('positionOfSun', async () => {
 
 test('positionOfMoon', async () => {
 	const request = new Request('http://localhost/atlas/moon/position?dateTime=2025-01-15T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const position = (await response.json()) as BodyPosition
 
 	expect(position.rightAscensionJ2000).toBeCloseTo(2.510279836007113, 12)
@@ -45,7 +47,7 @@ test('positionOfMoon', async () => {
 
 test('positionOfMars', async () => {
 	const request = new Request('http://localhost/atlas/planets/499/position?dateTime=2025-01-31T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const position = (await response.json()) as BodyPosition
 
 	expect(position.rightAscensionJ2000).toBeCloseTo(1.9632543785239203, 12)
@@ -65,10 +67,10 @@ test('positionOfMars', async () => {
 
 test('altitudePointsOfSun', async () => {
 	let request = new Request('http://localhost/atlas/sun/position?dateTime=2025-01-31T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	await atlas.handle(request)
+	await service.handle(request)
 
 	request = new Request('http://localhost/atlas/sun/altitude-points?dateTime=2025-01-31T21:36:00&stepSize=5')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const points = (await response.json()) as number[]
 
 	expect(points).toHaveLength(289)
@@ -78,10 +80,10 @@ test('altitudePointsOfSun', async () => {
 
 test('altitudePointsOfMoon', async () => {
 	let request = new Request('http://localhost/atlas/moon/position?dateTime=2025-01-15T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	await atlas.handle(request)
+	await service.handle(request)
 
 	request = new Request('http://localhost/atlas/moon/altitude-points?dateTime=2025-01-15T21:36:00&stepSize=5')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const points = (await response.json()) as number[]
 
 	expect(points).toHaveLength(289)
@@ -91,10 +93,10 @@ test('altitudePointsOfMoon', async () => {
 
 test('altitudePointsOfMars', async () => {
 	let request = new Request('http://localhost/atlas/planets/499/position?dateTime=2025-01-31T21:36:00&longitude=-45&latitude=-23&elevation=890')
-	await atlas.handle(request)
+	await service.handle(request)
 
 	request = new Request('http://localhost/atlas/planets/499/altitude-points?dateTime=2025-01-31T21:36:00&stepSize=5')
-	const response = await atlas.handle(request)
+	const response = await service.handle(request)
 	const points = (await response.json()) as number[]
 
 	expect(points).toHaveLength(289)

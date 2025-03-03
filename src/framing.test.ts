@@ -2,9 +2,13 @@ import { expect, test } from 'bun:test'
 import type { HipsSurvey } from 'nebulosa/src/hips2fits'
 import { framing } from './framing'
 
+process.env.TZ = 'America/Sao_Paulo'
+
+const service = framing()
+
 test('frame', async () => {
 	const request = new Request('http://localhost/framing?hipsSurvey=CDS/P/DSS2/red&rightAscension=0&declination=0&width=400&height=400&fov=1')
-	const response = await framing.handle(request)
+	const response = await service.handle(request)
 	const frame = await response.bytes()
 
 	expect(frame).toHaveLength(325440)
@@ -12,7 +16,7 @@ test('frame', async () => {
 
 test('hipsSurveys', async () => {
 	const request = new Request('http://localhost/framing/hips-surveys')
-	const response = await framing.handle(request)
+	const response = await service.handle(request)
 	const surveys = (await response.json()) as HipsSurvey[]
 
 	expect(surveys).toHaveLength(116)
