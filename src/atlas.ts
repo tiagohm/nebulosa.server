@@ -1,50 +1,15 @@
-import { Elysia, type Static, t } from 'elysia'
+import { Elysia } from 'elysia'
 import { type Angle, deg, parseAngle } from 'nebulosa/src/angle'
 import { AU_KM, SPEED_OF_LIGHT } from 'nebulosa/src/constants'
 import type { CsvRow } from 'nebulosa/src/csv'
 import { type DateTime, dateFrom } from 'nebulosa/src/datetime'
 import { type Distance, meter } from 'nebulosa/src/distance'
 import { Quantity, observer } from 'nebulosa/src/horizons'
-
-const LOCATION_QUERY = t.Object({
-	longitude: t.Number({ minimum: -180, maximum: 180 }),
-	latitude: t.Number({ minimum: -90, maximum: 90 }),
-	elevation: t.Number(),
-})
-
-const DATE_TIME_QUERY = t.Object({
-	dateTime: t.String(),
-})
-
-const POSITION_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, LOCATION_QUERY])
-
-const ALTITUDE_POINTS_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, t.Object({ stepSize: t.Number({ minimum: 1, maximum: 60 }) })])
+import { ALTITUDE_POINTS_OF_BODY_TYPE, type AltitudePointsOfMoon, type AltitudePointsOfPlanet, type AltitudePointsOfSatellite, type AltitudePointsOfSkyObject, type AltitudePointsOfSun, POSITION_OF_BODY_TYPE, type PositionOfMoon, type PositionOfPlanet, type PositionOfSun } from './types'
 
 const BODY_POSITIONS = new Map<string, Map<number, Readonly<BodyPosition>>>()
 
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
-
-export type Location = Readonly<Static<typeof LOCATION_QUERY>>
-
-export type PositionOfSun = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfMoon = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfPlanet = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfSkyObject = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfSatellite = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSun = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfMoon = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfPlanet = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSkyObject = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSatellite = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
 
 export interface BodyPosition {
 	rightAscensionJ2000: number
@@ -65,33 +30,33 @@ export interface BodyPosition {
 export function atlas() {
 	return new Elysia({ prefix: '/atlas' })
 		.get('/sun/image', () => imageOfSun())
-		.get('/sun/position', ({ query }) => positionOfSun(query), { query: POSITION_OF_BODY_QUERY })
-		.get('/sun/altitude-points', ({ query }) => altitudePointsOfSun(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/sun/position', ({ query }) => positionOfSun(query), { query: POSITION_OF_BODY_TYPE })
+		.get('/sun/altitude-points', ({ query }) => altitudePointsOfSun(query), { query: ALTITUDE_POINTS_OF_BODY_TYPE })
 		.get('/earth/seasons', () => earthSeasons())
-		.get('/moon/position', ({ query }) => positionOfMoon(query), { query: POSITION_OF_BODY_QUERY })
-		.get('/moon/altitude-points', ({ query }) => altitudePointsOfMoon(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/moon/position', ({ query }) => positionOfMoon(query), { query: POSITION_OF_BODY_TYPE })
+		.get('/moon/altitude-points', ({ query }) => altitudePointsOfMoon(query), { query: ALTITUDE_POINTS_OF_BODY_TYPE })
 		.get('/moon/phases', () => moonPhases())
 		.get('/twilight', () => twilight())
-		.get('/planets/:code/position', ({ query, params: { code } }) => positionOfPlanet(code, query), { query: POSITION_OF_BODY_QUERY })
-		.get('/planets/:code/altitude-points', ({ query, params: { code } }) => altitudePointsOfPlanet(code, query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/planets/:code/position', ({ query, params: { code } }) => positionOfPlanet(code, query), { query: POSITION_OF_BODY_TYPE })
+		.get('/planets/:code/altitude-points', ({ query, params: { code } }) => altitudePointsOfPlanet(code, query), { query: ALTITUDE_POINTS_OF_BODY_TYPE })
 		.get('/minor-planets', () => searchMinorPlanet())
 		.get('/minor-planets/close-approaches', () => closeApproachesForMinorPlanets())
 		.get('/sky-objects', () => searchSkyObject())
 		.get('/sky-objects/types', () => skyObjectTypes())
 		.get('/sky-objects/:id/position', ({ query, params: { id } }) => positionOfSkyObject())
-		.get('/sky-objects/:id/altitude-points', ({ query }) => altitudePointsOfSkyObject(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/sky-objects/:id/altitude-points', ({ query }) => altitudePointsOfSkyObject(query), { query: ALTITUDE_POINTS_OF_BODY_TYPE })
 		.get('/satellites', () => searchSatellites())
 		.get('/satellites/:id/position', ({ query, params: { id } }) => positionOfSatellite())
-		.get('/satellites/:id/altitude-points', ({ query }) => altitudePointsOfSatellite(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+		.get('/satellites/:id/altitude-points', ({ query }) => altitudePointsOfSatellite(query), { query: ALTITUDE_POINTS_OF_BODY_TYPE })
 }
 
-function imageOfSun() {}
+export function imageOfSun() {}
 
-function positionOfSun(q: PositionOfSun) {
+export function positionOfSun(q: PositionOfSun) {
 	return computeEphemeris('10', dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
 }
 
-function altitudePointsOfSun(q: AltitudePointsOfSun) {
+export function altitudePointsOfSun(q: AltitudePointsOfSun) {
 	return computeAltitudePoints('10', dateFrom(q.dateTime, true), q.stepSize)
 }
 

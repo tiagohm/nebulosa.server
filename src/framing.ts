@@ -1,22 +1,11 @@
-import { Elysia, type Static, t } from 'elysia'
+import { Elysia } from 'elysia'
 import { deg, parseAngle } from 'nebulosa/src/angle'
 import { hips2Fits, hipsSurveys } from 'nebulosa/src/hips2fits'
-
-const FRAMING_QUERY = t.Object({
-	hipsSurvey: t.String(),
-	rightAscension: t.Union([t.String(), t.Number()]),
-	declination: t.Union([t.String(), t.Number()]),
-	width: t.Number({ minimum: 1, maximum: 7680 }),
-	height: t.Number({ minimum: 1, maximum: 4320 }),
-	fov: t.Optional(t.Number({ minimum: 0, maximum: 90 })),
-	rotation: t.Optional(t.Number()),
-})
-
-export type Framing = Static<typeof FRAMING_QUERY>
+import { FRAMING_TYPE, type Framing } from './types'
 
 export function framing() {
 	return new Elysia({ prefix: '/framing' })
-		.get('/', ({ query }) => frame(query), { query: FRAMING_QUERY }) //
+		.get('/', ({ query }) => frame(query), { query: FRAMING_TYPE }) //
 		.get('/hips-surveys', () => hipsSurveys())
 }
 
