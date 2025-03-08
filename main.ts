@@ -6,6 +6,7 @@ import fovTelescopes from './data/telescopes.json' with { type: 'json' }
 import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight, } from './src/atlas'
 import { frame } from './src/framing'
 import { analyzeImage, annotateImage, closeImage, coordinateInterpolation, openImage, saveImage, statistics } from './src/image'
+import { webSocketMessageHandler } from './src/message'
 import { detectStars } from './src/star-detection'
 
 const ARGS = parseArgs({
@@ -34,6 +35,7 @@ const HIPS_SURVEYS_RESPONSE = json(hipsSurveys)
 const FOV_CAMERAS_RESPONSE = json(fovCameras)
 const FOV_TELESCOPES_RESPONSE = json(fovTelescopes)
 
+// @ts-ignore
 const SERVER = Bun.serve({
 	hostname: HOSTNAME,
 	port: PORT,
@@ -80,6 +82,20 @@ const SERVER = Bun.serve({
 		// Fallback
 		'/*': { OPTIONS: () => cors() },
 	},
+	fetch: (req, server) => {
+		const url = new URL(req.url)
+
+		if (url.pathname === '/ws') {
+			if (server.upgrade(req)) {
+				return undefined
+			}
+
+			return new Response('WebSocket Upgrade Error', { status: 500 })
+		}
+
+		return new Response(null, { status: 404 })
+	},
+	websocket: webSocketMessageHandler as never,
 })
 
 function json(data: unknown) {
