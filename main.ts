@@ -6,6 +6,7 @@ import fovTelescopes from './data/telescopes.json' with { type: 'json' }
 import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight, } from './src/atlas'
 import { frame } from './src/framing'
 import { analyzeImage, annotateImage, closeImage, coordinateInterpolation, openImage, saveImage, statistics } from './src/image'
+import { detectStars } from './src/star-detection'
 
 const ARGS = parseArgs({
 	args: Bun.argv,
@@ -72,6 +73,9 @@ const SERVER = Bun.serve({
 		'/image/statistics': { POST: () => json(statistics()) },
 		'/image/fov-cameras': () => FOV_CAMERAS_RESPONSE,
 		'/image/fov-telescopes': () => FOV_TELESCOPES_RESPONSE,
+
+		// Star Detection
+		'/star-detection': { POST: async (req) => json(await detectStars(await req.json())) },
 
 		// Fallback
 		'/*': { OPTIONS: () => cors() },

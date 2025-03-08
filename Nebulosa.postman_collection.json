@@ -342,6 +342,37 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Star Detection",
+			"item": [
+				{
+					"name": "Detect Stars",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"ASTAP\",\n    \"executable\": \"astap\",\n    \"path\": \"/tmp/apod4.jpg\",\n    \"timeout\": 0,\n    \"minSNR\": 0,\n    \"maxStars\": 0,\n    \"slot\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/star-detection",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"star-detection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }
