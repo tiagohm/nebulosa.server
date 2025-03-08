@@ -1,114 +1,93 @@
-import { Elysia, type Static, t } from 'elysia'
 import fs from 'fs/promises'
 import { type Fits, readFits } from 'nebulosa/src/fits'
-import { type Image, fromFits, toFormat } from 'nebulosa/src/image'
+import { type Image, type ImageChannel, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
 import { fileHandleSource } from 'nebulosa/src/io'
-import cameras from '../data/cameras.json'
-import telescopes from '../data/telescopes.json'
 
-const OPEN_IMAGE_QUERY = t.Object({
-	path: t.String(),
-	camera: t.Optional(t.String()),
-})
+export interface ImageStretch {
+	auto: boolean
+	shadow: number // 0 - 65535
+	highlight: number // 0 - 65535
+	midtone: number // 0 - 65535
+	meanBackground: number
+}
 
-const CLOSE_IMAGE_QUERY = t.Object({
-	id: t.String(),
-})
+export interface ImageScnr {
+	channel: ImageChannel
+	amount: number
+	method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
+}
 
-const IMAGE_STRETCH_QUERY = t.Object({
-	auto: t.Boolean(),
-	shadow: t.Integer(),
-	highlight: t.Integer(),
-	midtone: t.Integer(),
-	meanBackground: t.Number(),
-})
+export interface ImageAdjustmentLevel {
+	enabled: boolean
+	value: number
+}
 
-const IMAGE_SCNR_QUERY = t.Object({
-	channel: t.Union([t.Literal('GRAY'), t.Literal('RED'), t.Literal('GREEN'), t.Literal('BLUE')]),
-	amount: t.Number(),
-	method: t.Union([t.Literal('MAXIMUM_MASK'), t.Literal('ADDITIVE_MASK'), t.Literal('AVERAGE_NEUTRAL'), t.Literal('MAXIMUM_NEUTRAL'), t.Literal('MINIMUM_NEUTRAL')]),
-})
+export interface ImageAdjustment {
+	enabled: boolean
+	contrast: ImageAdjustmentLevel
+	brightness: ImageAdjustmentLevel
+	exposure: ImageAdjustmentLevel
+	gamma: ImageAdjustmentLevel
+	saturation: ImageAdjustmentLevel
+	fade: ImageAdjustmentLevel
+}
 
-const IMAGE_ADJUSTMENT_LEVEL_QUERY = t.Object({
-	enabled: t.Boolean(),
-	value: t.Number(),
-})
+export interface ImageTransformation {
+	force: boolean
+	calibrationGroup?: string
+	debayer: boolean
+	stretch: ImageStretch
+	mirrorHorizontal: boolean
+	mirrorVertical: boolean
+	invert: boolean
+	scnr: ImageScnr
+	useJPEG: boolean
+	adjustment: ImageAdjustment
+}
 
-const IMAGE_ADJUSTMENT_QUERY = t.Object({
-	enabled: t.Boolean(),
-	contrast: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-	brightness: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-	exposure: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-	gamma: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-	saturation: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-	fade: IMAGE_ADJUSTMENT_LEVEL_QUERY,
-})
+export interface OpenImage {
+	path: string
+	camera?: string
+	transformation: ImageTransformation
+}
 
-const IMAGE_TRANSFORMATION_QUERY = t.Object({
-	force: t.Boolean(),
-	calibrationGroup: t.Optional(t.String()),
-	debayer: t.Boolean(),
-	stretch: IMAGE_STRETCH_QUERY,
-	mirrorHorizontal: t.Boolean(),
-	mirrorVertical: t.Boolean(),
-	invert: t.Boolean(),
-	scnr: IMAGE_SCNR_QUERY,
-	useJPEG: t.Boolean(),
-	adjustment: IMAGE_ADJUSTMENT_QUERY,
-})
+export interface CloseImage {
+	id: string
+}
 
-export type ImageTransformation = Readonly<Static<typeof IMAGE_TRANSFORMATION_QUERY>>
-
-export type OpenImage = Readonly<Static<typeof OPEN_IMAGE_QUERY>>
-
-export type CloseImage = Readonly<Static<typeof CLOSE_IMAGE_QUERY>>
-
-export interface CachedImage {
+interface CachedImage {
 	fits?: Fits
 	image?: Image
 }
 
-export function image() {
-	return new Elysia({ prefix: '/image' })
-		.post('/open', ({ query, body }) => openImage(query, body), { query: OPEN_IMAGE_QUERY, body: IMAGE_TRANSFORMATION_QUERY })
-		.post('/close', ({ query }) => closeImage(query), { query: CLOSE_IMAGE_QUERY })
-		.post('/save', () => saveImage())
-		.post('/analyze', () => analyzeImage())
-		.post('/annotate', () => annotateImage())
-		.get('/coordinate-interpolation', () => coordinateInterpolation())
-		.post('/statistics', () => statistics())
-		.get('/fov-cameras', () => cameras)
-		.get('/fov-telescopes', () => telescopes)
-}
-
 const images = new Map<string, CachedImage>()
 
-async function openImage(q: OpenImage, t: ImageTransformation) {
-	const handle = await fs.open(q.path)
+export async function openImage(req: OpenImage) {
+	const handle = await fs.open(req.path)
 	const source = fileHandleSource(handle)
 	const fits = await readFits(source)
 
 	if (fits) {
-		const image = await fromFits(fits)
+		const image = await readImageFromFits(fits)
 
 		if (image) {
 			const id = Bun.randomUUIDv7()
-			await toFormat(image, '', t.useJPEG ? 'jpeg' : 'png')
+			await writeImageToFormat(image, '', req.transformation.useJPEG ? 'jpeg' : 'png')
 			images.set(id, { fits, image })
 		}
 	}
 }
 
-function closeImage(q: CloseImage) {
+export function closeImage(q: CloseImage) {
 	images.delete(q.id)
 }
 
-function saveImage() {}
+export function saveImage() {}
 
-function analyzeImage() {}
+export function analyzeImage() {}
 
-function annotateImage() {}
+export function annotateImage() {}
 
-function coordinateInterpolation() {}
+export function coordinateInterpolation() {}
 
-function statistics() {}
+export function statistics() {}

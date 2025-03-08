@@ -1,30 +1,11 @@
 import { expect, test } from 'bun:test'
-import type { HipsSurvey } from 'nebulosa/src/hips2fits'
-import { framing } from '../src/framing'
+import { type Framing, frame } from '../src/framing'
 
 process.env.TZ = 'America/Sao_Paulo'
 
-const service = framing()
-
 test('frame', async () => {
-	const request = new Request('http://localhost/framing?hipsSurvey=CDS/P/DSS2/red&rightAscension=0&declination=0&width=400&height=400&fov=1')
-	const response = await service.handle(request)
-	const frame = await response.bytes()
+	const request: Framing = { hipsSurvey: 'CDS/P/DSS2/red', rightAscension: 0, declination: 0, width: 400, height: 400, fov: 1, rotation: 0 }
+	const response = await frame(request)
 
-	expect(frame).toHaveLength(325440)
-})
-
-test('hipsSurveys', async () => {
-	const request = new Request('http://localhost/framing/hips-surveys')
-	const response = await service.handle(request)
-	const surveys = (await response.json()) as HipsSurvey[]
-
-	expect(surveys).toHaveLength(116)
-	expect(surveys[0].id).toBe('CDS/P/2MASS/H')
-	expect(surveys[0].category).toBe('Image/Infrared/2MASS')
-	expect(surveys[0].frame).toBe('equatorial')
-	expect(surveys[0].regime).toBe('infrared')
-	expect(surveys[0].bitpix).toBe(-32)
-	expect(surveys[0].pixelScale).toBe(2.236e-4)
-	expect(surveys[0].skyFraction).toBe(1)
+	expect(response).toHaveLength(325440)
 })

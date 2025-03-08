@@ -1,4 +1,3 @@
-import { Elysia, type Static, t } from 'elysia'
 import { type Angle, deg, parseAngle } from 'nebulosa/src/angle'
 import { AU_KM, SPEED_OF_LIGHT } from 'nebulosa/src/constants'
 import type { CsvRow } from 'nebulosa/src/csv'
@@ -6,134 +5,87 @@ import { type DateTime, dateFrom } from 'nebulosa/src/datetime'
 import { type Distance, meter } from 'nebulosa/src/distance'
 import { Quantity, observer } from 'nebulosa/src/horizons'
 
-const LOCATION_QUERY = t.Object({
-	longitude: t.Number({ minimum: -180, maximum: 180 }),
-	latitude: t.Number({ minimum: -90, maximum: 90 }),
-	elevation: t.Number(),
-})
-
-const DATE_TIME_QUERY = t.Object({
-	dateTime: t.String(),
-})
-
-const POSITION_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, LOCATION_QUERY])
-
-const ALTITUDE_POINTS_OF_BODY_QUERY = t.Composite([DATE_TIME_QUERY, t.Object({ stepSize: t.Number({ minimum: 1, maximum: 60 }) })])
-
 const BODY_POSITIONS = new Map<string, Map<number, Readonly<BodyPosition>>>()
 
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
 
-export type Location = Readonly<Static<typeof LOCATION_QUERY>>
+export interface PositionOfBody {
+	dateTime: string
+	longitude: number
+	latitude: number
+	elevation: number
+}
 
-export type PositionOfSun = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfMoon = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfPlanet = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfSkyObject = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type PositionOfSatellite = Readonly<Static<typeof POSITION_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSun = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfMoon = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfPlanet = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSkyObject = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
-
-export type AltitudePointsOfSatellite = Readonly<Static<typeof ALTITUDE_POINTS_OF_BODY_QUERY>>
+export interface AltitudeChartOfBody {
+	dateTime: string
+	stepSize: number
+}
 
 export interface BodyPosition {
-	rightAscensionJ2000: number
-	declinationJ2000: number
-	rightAscension: number
-	declination: number
-	azimuth: number
-	altitude: number
-	magnitude: number
-	constellation: string
-	distance: number
-	distanceUnit: string
-	illuminated: number
-	elongation: number
-	leading: boolean
+	readonly rightAscensionJ2000: number
+	readonly declinationJ2000: number
+	readonly rightAscension: number
+	readonly declination: number
+	readonly azimuth: number
+	readonly altitude: number
+	readonly magnitude: number
+	readonly constellation: string
+	readonly distance: number
+	readonly distanceUnit: string
+	readonly illuminated: number
+	readonly elongation: number
+	readonly leading: boolean
 }
 
-export function atlas() {
-	return new Elysia({ prefix: '/atlas' })
-		.get('/sun/image', () => imageOfSun())
-		.get('/sun/position', ({ query }) => positionOfSun(query), { query: POSITION_OF_BODY_QUERY })
-		.get('/sun/altitude-points', ({ query }) => altitudePointsOfSun(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-		.get('/earth/seasons', () => earthSeasons())
-		.get('/moon/position', ({ query }) => positionOfMoon(query), { query: POSITION_OF_BODY_QUERY })
-		.get('/moon/altitude-points', ({ query }) => altitudePointsOfMoon(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-		.get('/moon/phases', () => moonPhases())
-		.get('/twilight', () => twilight())
-		.get('/planets/:code/position', ({ query, params: { code } }) => positionOfPlanet(code, query), { query: POSITION_OF_BODY_QUERY })
-		.get('/planets/:code/altitude-points', ({ query, params: { code } }) => altitudePointsOfPlanet(code, query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-		.get('/minor-planets', () => searchMinorPlanet())
-		.get('/minor-planets/close-approaches', () => closeApproachesForMinorPlanets())
-		.get('/sky-objects', () => searchSkyObject())
-		.get('/sky-objects/types', () => skyObjectTypes())
-		.get('/sky-objects/:id/position', ({ query, params: { id } }) => positionOfSkyObject())
-		.get('/sky-objects/:id/altitude-points', ({ query }) => altitudePointsOfSkyObject(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
-		.get('/satellites', () => searchSatellites())
-		.get('/satellites/:id/position', ({ query, params: { id } }) => positionOfSatellite())
-		.get('/satellites/:id/altitude-points', ({ query }) => altitudePointsOfSatellite(query), { query: ALTITUDE_POINTS_OF_BODY_QUERY })
+export function imageOfSun() {}
+
+export function positionOfSun(req: PositionOfBody) {
+	return computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 }
 
-function imageOfSun() {}
-
-function positionOfSun(q: PositionOfSun) {
-	return computeEphemeris('10', dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+export function altitudeChartOfSun(req: AltitudeChartOfBody) {
+	return computeAltitudeChart('10', dateFrom(req.dateTime, true), req.stepSize)
 }
 
-function altitudePointsOfSun(q: AltitudePointsOfSun) {
-	return computeAltitudePoints('10', dateFrom(q.dateTime, true), q.stepSize)
+export function earthSeasons() {}
+
+export function positionOfMoon(req: PositionOfBody) {
+	return computeEphemeris('301', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 }
 
-function earthSeasons() {}
-
-function positionOfMoon(q: PositionOfMoon) {
-	return computeEphemeris('301', dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+export function altitudeChartOfMoon(req: AltitudeChartOfBody) {
+	return computeAltitudeChart('301', dateFrom(req.dateTime, true), req.stepSize)
 }
 
-function altitudePointsOfMoon(q: AltitudePointsOfMoon) {
-	return computeAltitudePoints('301', dateFrom(q.dateTime, true), q.stepSize)
+export function moonPhases() {}
+
+export function twilight() {}
+
+export function positionOfPlanet(code: string, req: PositionOfBody) {
+	return computeEphemeris(code, dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 }
 
-function moonPhases() {}
-
-function twilight() {}
-
-function positionOfPlanet(code: string, q: PositionOfPlanet) {
-	return computeEphemeris(code, dateFrom(q.dateTime, true), deg(q.longitude), deg(q.latitude), meter(q.elevation))
+export function altitudeChartOfPlanet(code: string, req: AltitudeChartOfBody) {
+	return computeAltitudeChart(code, dateFrom(req.dateTime, true), req.stepSize)
 }
 
-function altitudePointsOfPlanet(code: string, q: AltitudePointsOfPlanet) {
-	return computeAltitudePoints(code, dateFrom(q.dateTime, true), q.stepSize)
-}
+export function searchMinorPlanet() {}
 
-function searchMinorPlanet() {}
+export function closeApproachesForMinorPlanets() {}
 
-function closeApproachesForMinorPlanets() {}
+export function searchSkyObject() {}
 
-function searchSkyObject() {}
+export function skyObjectTypes() {}
 
-function skyObjectTypes() {}
+export function positionOfSkyObject(req: PositionOfBody, id: string) {}
 
-function positionOfSkyObject() {}
+export function altitudeChartOfSkyObject(req: AltitudeChartOfBody) {}
 
-function altitudePointsOfSkyObject(q: AltitudePointsOfSkyObject) {}
+export function searchSatellites() {}
 
-function searchSatellites() {}
+export function positionOfSatellite(req: PositionOfBody, id: string) {}
 
-function positionOfSatellite() {}
-
-function altitudePointsOfSatellite(q: AltitudePointsOfSatellite) {}
+export function altitudeChartOfSatellite(req: AltitudeChartOfBody) {}
 
 async function computeEphemeris(code: string, dateTime: DateTime, longitude: number, latitude: Angle, elevation: Distance) {
 	const time = timeWithoutSeconds(dateTime)
@@ -150,10 +102,10 @@ async function computeEphemeris(code: string, dateTime: DateTime, longitude: num
 	if (!BODY_POSITIONS.has(code)) BODY_POSITIONS.set(code, new Map())
 	const map = BODY_POSITIONS.get(code)!
 	positions.forEach((e) => map.set(e[0], e[1]))
-	return map.get(time)
+	return map.get(time)!
 }
 
-function computeAltitudePoints(code: string, dateTime: DateTime, stepSizeInMinutes: number) {
+function computeAltitudeChart(code: string, dateTime: DateTime, stepSizeInMinutes: number) {
 	const positions = BODY_POSITIONS.get(code)!
 
 	let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)

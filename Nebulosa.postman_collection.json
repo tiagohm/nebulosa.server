@@ -1,0 +1,347 @@
+{
+	"info": {
+		"_postman_id": "5c43f17f-40b4-496c-a825-a70b7086ebbc",
+		"name": "Nebulosa",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "10347066"
+	},
+	"item": [
+		{
+			"name": "Atlas",
+			"item": [
+				{
+					"name": "Position of Sun",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/sun/position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"sun",
+								"position"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Altitude Chart Of Sun",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/sun/altitude-chart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"sun",
+								"altitude-chart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Position of Moon",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/moon/position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"moon",
+								"position"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Altitude Chart Of Moon",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/moon/altitude-chart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"moon",
+								"altitude-chart"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Position of Mars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/planets/499/position",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"planets",
+								"499",
+								"position"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Altitude Chart Of Mars",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/atlas/planets/499/altitude-chart",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"atlas",
+								"planets",
+								"499",
+								"altitude-chart"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Framing",
+			"item": [
+				{
+					"name": "HiPS Surveys",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/framing/hips-surveys",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"framing",
+								"hips-surveys"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Framing",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"hipsSurvey\": \"CDS/P/DSS2/red\",\n    \"rightAscension\": 0,\n    \"declination\": 0,\n    \"width\": 800,\n    \"height\": 600,\n    \"fov\": 1, // deg\n    \"rotation\": 0 // deg\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/framing",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"framing"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Image",
+			"item": [
+				{
+					"name": "FOV Cameras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/image/fov-cameras",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"image",
+								"fov-cameras"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "FOV Telescopes",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/image/fov-telescopes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"image",
+								"fov-telescopes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
