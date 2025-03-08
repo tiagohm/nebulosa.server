@@ -1,7 +1,7 @@
-.PHONY: run lint format test compile serve
+.PHONY: dev lint format test compile serve
 
-run:
-	bun run .
+dev:
+	bun --watch run .
 
 lint:
 	bun lint
@@ -12,13 +12,8 @@ format:
 test:
 	bun test --timeout 10000
 
-ifeq ($(OS),Windows_NT)
 compile:
-	bun build --compile --minify --bytecode . --outfile nebulosa.exe
-else
-compile:
-	bun build --compile --minify --bytecode . --outfile nebulosa.out
+	bun build --compile --minify . --outfile nebulosa.exe
 
 serve: compile
-	./nebulosa.out
-endif
+	./nebulosa.exe
