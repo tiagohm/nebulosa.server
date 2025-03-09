@@ -4,6 +4,7 @@ import hipsSurveys from './data/hips-surveys.json' with { type: 'json' }
 import fovTelescopes from './data/telescopes.json' with { type: 'json' }
 // biome-ignore format:
 import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight, } from './src/atlas'
+import { ConfirmationService } from './src/confirmation'
 import { ConnectionService } from './src/connection'
 import { frame } from './src/framing'
 import { analyzeImage, annotateImage, closeImage, coordinateInterpolation, openImage, saveImage, statistics } from './src/image'
@@ -39,6 +40,7 @@ const fovTelescopeResponse = Response.json(fovTelescopes)
 
 const webSocketMessageHandler = new WebSocketMessageHandler()
 const connection = new ConnectionService(webSocketMessageHandler)
+const confirmation = new ConfirmationService(webSocketMessageHandler)
 
 // @ts-ignore
 const server = Bun.serve({
@@ -48,6 +50,9 @@ const server = Bun.serve({
 		// Connection
 		'/connections': { POST: async (req) => Response.json(await connection.connect(await req.json())), GET: () => Response.json(connection.list()) },
 		'/connections/:id': { GET: (req) => Response.json(connection.status(req.params.id)), DELETE: (req) => Response.json(connection.disconnect(req.params.id)) },
+
+		// Confirmation
+		'/confirmation': { POST: async (req) => Response.json(confirmation.confirm(await req.json())) },
 
 		// Atlas
 		'/atlas/sun/image': noResponse, // TODO: Use server.reload(options) to update the image.
