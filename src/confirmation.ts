@@ -25,7 +25,7 @@ export class ConfirmationService {
 	ask(message: Omit<Confirmation, 'type'>, timeout: number = 30000) {
 		const confirmation = new Promise<boolean>((resolve) => {
 			this.confirmations.set(message.key, resolve)
-			this.webSocketMessageHandler.send({ ...message, type: CONFIRMATION_TYPE })
+			this.webSocketMessageHandler.send<Confirmation>({ ...message, type: CONFIRMATION_TYPE })
 			setTimeout(() => resolve(false), timeout)
 		})
 
