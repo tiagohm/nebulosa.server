@@ -1,31 +1,35 @@
 import type { ServerWebSocket, WebSocketHandler } from 'bun'
 
-const sockets = new Set<ServerWebSocket>()
-
-export const webSocketMessageHandler: WebSocketHandler = {
-	open: (socket) => {
-		if (!sockets.has(socket)) {
-			sockets.add(socket)
-			console.info('WebSocket connected: ', socket.remoteAddress)
-		}
-	},
-	message: (socket, data) => {},
-	close: (socket, code, reason) => {
-		if (sockets.has(socket)) {
-			console.info('WebSocket closed: ', code, reason)
-			sockets.delete(socket)
-		}
-	},
-}
-
 export interface WebSocketMessage {
 	type: string
 }
 
-export function sendMessage(message: WebSocketMessage) {
-	const data = JSON.stringify(message)
+export class WebSocketMessageHandler implements WebSocketHandler {
+	private readonly sockets = new Set<ServerWebSocket<unknown>>()
 
-	sockets.forEach((socket) => {
-		socket.sendText(data)
-	})
+	open(socket: ServerWebSocket<unknown>) {
+		if (!this.sockets.has(socket)) {
+			this.sockets.add(socket)
+			console.info('WebSocket connected: ', socket.remoteAddress)
+		}
+	}
+
+	message(socket: ServerWebSocket<unknown>, message: string | Buffer) {
+		//
+	}
+
+	close(socket: ServerWebSocket<unknown>, code: number, reason: string) {
+		if (this.sockets.has(socket)) {
+			console.info('WebSocket closed: ', code, reason)
+			this.sockets.delete(socket)
+		}
+	}
+
+	send<T extends WebSocketMessage>(message: T) {
+		const data = JSON.stringify(message)
+
+		this.sockets.forEach((socket) => {
+			socket.sendText(data)
+		})
+	}
 }
