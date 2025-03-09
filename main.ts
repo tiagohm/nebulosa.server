@@ -3,11 +3,12 @@ import fovCameras from './data/cameras.json' with { type: 'json' }
 import hipsSurveys from './data/hips-surveys.json' with { type: 'json' }
 import fovTelescopes from './data/telescopes.json' with { type: 'json' }
 // biome-ignore format:
-import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight, } from './src/atlas'
+import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight } from './src/atlas'
 import { ConfirmationService } from './src/confirmation'
 import { ConnectionService } from './src/connection'
 import { frame } from './src/framing'
 import { analyzeImage, annotateImage, closeImage, coordinateInterpolation, openImage, saveImage, statistics } from './src/image'
+import { IndiService } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { detectStars } from './src/star-detection'
 
@@ -39,7 +40,21 @@ const fovCameraResponse = Response.json(fovCameras)
 const fovTelescopeResponse = Response.json(fovTelescopes)
 
 const webSocketMessageHandler = new WebSocketMessageHandler()
-const connection = new ConnectionService(webSocketMessageHandler)
+
+const indi = new IndiService({
+	// TODO: Handle close event to remove clients
+	cameraUpdated: (device, property) => {
+		webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
+	},
+	cameraAdded: (device) => {
+		webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
+	},
+	cameraRemoved: (device) => {
+		webSocketMessageHandler.send({ type: 'CAMERA.REMOVED', device })
+	},
+})
+
+const connection = new ConnectionService(indi)
 const confirmation = new ConfirmationService(webSocketMessageHandler)
 
 // @ts-ignore
@@ -53,6 +68,10 @@ const server = Bun.serve({
 
 		// Confirmation
 		'/confirmation': { POST: async (req) => Response.json(confirmation.confirm(await req.json())) },
+
+		// INDI
+		'/indi/:id/connect': { POST: (req) => Response.json(indi.deviceConnect(connection.client!, req.params.id)) },
+		'/indi/:id/disconnect': { POST: (req) => Response.json(indi.deviceDisconnect(connection.client!, req.params.id)) },
 
 		// Atlas
 		'/atlas/sun/image': noResponse, // TODO: Use server.reload(options) to update the image.

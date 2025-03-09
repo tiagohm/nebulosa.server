@@ -26,10 +26,12 @@ export class WebSocketMessageHandler implements WebSocketHandler {
 	}
 
 	send<T extends WebSocketMessage>(message: T) {
-		const data = JSON.stringify(message)
+		if (this.sockets.size) {
+			const data = JSON.stringify(message)
 
-		this.sockets.forEach((socket) => {
-			socket.sendText(data)
-		})
+			this.sockets.forEach((socket) => {
+				socket.sendText(data)
+			})
+		}
 	}
 }

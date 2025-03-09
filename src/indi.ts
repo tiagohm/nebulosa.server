@@ -1,4 +1,5 @@
-import { type DefSwitchVector, type DefTextVector, type IndiClient, type IndiClientHandler, PropertyState, type SetSwitchVector, type SetTextVector, type SwitchVector, type TextVector } from 'nebulosa/src/indi'
+// biome-ignore format:
+import { type DefNumberVector, type DefSwitchVector, type DefTextVector, type IndiClient, type IndiClientHandler, type NumberVectorTag, PropertyPermission, PropertyState, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SwitchVectorTag, type TextVectorTag } from 'nebulosa/src/indi'
 
 export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'SWITCH' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
 
@@ -62,9 +63,11 @@ export interface Camera extends GuideOutput, Thermometer {
 	dewHeater: boolean
 	frameFormats: string[]
 	canAbort: boolean
-	cfaOffsetX: number
-	cfaOffsetY: number
-	cfaType: CfaPattern
+	cfa: {
+		offsetX: number
+		offsetY: number
+		type: CfaPattern
+	}
 	exposureMin: number
 	exposureMax: number
 	exposureState: PropertyState
@@ -96,8 +99,10 @@ export interface Camera extends GuideOutput, Thermometer {
 	offsetMin: number
 	offsetMax: number
 	guideHead?: GuideHead
-	pixelSizeX: number
-	pixelSizeY: number
+	pixelSize: {
+		x: number
+		y: number
+	}
 }
 
 export interface GuideHead extends Exclude<Camera, 'guideHead'>, CompanionDevice<Camera> {}
@@ -118,9 +123,11 @@ const EMPTY_CAMERA: Camera = {
 	dewHeater: false,
 	frameFormats: [],
 	canAbort: false,
-	cfaOffsetX: 0,
-	cfaOffsetY: 0,
-	cfaType: 'RGGB',
+	cfa: {
+		offsetX: 0,
+		offsetY: 0,
+		type: 'RGGB',
+	},
 	exposureMin: 0,
 	exposureMax: 0,
 	exposureState: PropertyState.IDLE,
@@ -151,8 +158,10 @@ const EMPTY_CAMERA: Camera = {
 	offset: 0,
 	offsetMin: 0,
 	offsetMax: 0,
-	pixelSizeX: 0,
-	pixelSizeY: 0,
+	pixelSize: {
+		x: 0,
+		y: 0,
+	},
 	canPulseGuide: false,
 	pulseGuiding: false,
 	type: 'CAMERA',
@@ -169,16 +178,18 @@ const EMPTY_CAMERA: Camera = {
 
 export class IndiService implements IndiClientHandler {
 	private readonly cameras = new Map<string, Camera>()
-	private readonly enqueuedSwitchMessages: SwitchVector[] = []
-	private readonly enqueuedTextMessages: TextVector[] = []
+	private readonly enqueuedSwitchMessages = new Map<string, [SwitchVectorTag, DefSwitchVector | SetSwitchVector]>()
+	private readonly enqueuedTextMessages = new Map<string, [TextVectorTag, DefTextVector | SetTextVector]>()
+	private readonly enqueuedNumberMessages = new Map<string, [NumberVectorTag, DefNumberVector | SetNumberVector]>()
+	// private readonly deviceProperties = new Map<string, >()
 
 	constructor(private readonly handler: IndiDeviceEventHandler) {}
 
-	switchVector(client: IndiClient, message: DefSwitchVector | SetSwitchVector) {
+	switchVector(client: IndiClient, message: DefSwitchVector | SetSwitchVector, tag: SwitchVectorTag) {
 		const device = this.cameras.get(message.device)
 
 		if (!device) {
-			this.enqueuedSwitchMessages.push(message)
+			this.enqueuedSwitchMessages.set(message.name, [tag, message])
 			return
 		}
 
@@ -188,11 +199,40 @@ export class IndiService implements IndiClientHandler {
 
 				if (connected !== device.connected) {
 					device.connected = connected
-
-					if (this.cameras.has(device.name)) this.handler.cameraUpdated?.(device, 'connected', message.state)
-					this.handler.deviceUpdated?.(device, 'connected', message.state)
-
+					this.deviceUpdated(device, 'connected', message.state)
 					// if (connected) ask(client, device)
+				}
+
+				return
+			}
+			case 'CCD_COOLER': {
+				if (tag.startsWith('d')) {
+					device.hasCoolerControl = true
+					this.deviceUpdated(device, 'hasCoolerControl', message.state)
+				}
+
+				const cooler = message.elements.COOLER_ON?.value === true
+
+				if (cooler !== device.cooler) {
+					device.cooler = cooler
+					this.deviceUpdated(device, 'cooler', message.state)
+				}
+
+				return
+			}
+			case 'CCD_CAPTURE_FORMAT': {
+				if (tag.startsWith('d')) {
+					device.frameFormats = Object.keys(message.elements)
+					this.deviceUpdated(device, 'frameFormats', message.state)
+				}
+
+				return
+			}
+			case 'CCD_ABORT_EXPOSURE':
+			case 'GUIDER_ABORT_EXPOSURE': {
+				if (tag.startsWith('d')) {
+					device.canAbort = (message as DefSwitchVector).permission !== PropertyPermission.READ_ONLY
+					this.deviceUpdated(device, 'canAbort', message.state)
 				}
 
 				return
@@ -200,17 +240,18 @@ export class IndiService implements IndiClientHandler {
 		}
 	}
 
-	textVector(client: IndiClient, message: DefTextVector | SetTextVector) {
+	textVector(client: IndiClient, message: DefTextVector | SetTextVector, tag: TextVectorTag) {
 		switch (message.name) {
 			case 'DRIVER_INFO': {
-				const type = parseInt(message.elements.DRIVER_INTERFACE?.value || '0')
-				const executable = message.elements.DRIVER_EXEC?.value || ''
-				const version = message.elements.DRIVER_VERSION?.value || ''
+				const type = parseInt(message.elements.DRIVER_INTERFACE.value)
+				const executable = message.elements.DRIVER_EXEC.value
+				const version = message.elements.DRIVER_VERSION.value
 
 				if (isInterfaceType(type, DeviceInterfaceType.CCD)) {
 					if (!this.cameras.has(message.device)) {
 						const camera: Camera = { ...EMPTY_CAMERA, name: message.device, driver: { executable, version } }
 						this.cameras.set(message.device, camera)
+						this.processEnqueuedMessages(client, camera)
 						this.handler.cameraAdded?.(camera)
 					}
 				} else if (this.cameras.has(message.device)) {
@@ -226,8 +267,125 @@ export class IndiService implements IndiClientHandler {
 		const device = this.cameras.get(message.device)
 
 		if (!device) {
-			this.enqueuedTextMessages.push(message)
+			this.enqueuedTextMessages.set(message.name, [tag, message])
 			return
+		}
+
+		switch (message.name) {
+			case 'CCD_CFA': {
+				device.cfa.offsetX = parseInt(message.elements.CFA_OFFSET_X.value)
+				device.cfa.offsetY = parseInt(message.elements.CFA_OFFSET_Y.value)
+				device.cfa.type = message.elements.CFA_TYPE.value as CfaPattern
+				this.deviceUpdated(device, 'cfa', message.state)
+				return
+			}
+		}
+	}
+
+	numberVector(client: IndiClient, message: DefNumberVector | SetNumberVector, tag: NumberVectorTag) {
+		const device = this.cameras.get(message.device)
+
+		if (!device) {
+			this.enqueuedNumberMessages.set(message.name, [tag, message])
+			return
+		}
+
+		switch (message.name) {
+			case 'CCD_INFO':
+			case 'GUIDER_INFO': {
+				device.pixelSize.x = message.elements.CCD_PIXEL_SIZE_X?.value ?? 0
+				device.pixelSize.y = message.elements.CCD_PIXEL_SIZE_Y?.value ?? 0
+				this.deviceUpdated(device, 'pixelSize', message.state)
+				return
+			}
+		}
+	}
+
+	device(id: string): Device | undefined {
+		return this.cameras.get(id)
+	}
+
+	deviceConnect(client: IndiClient, device: Device | string) {
+		device = typeof device === 'string' ? this.device(device)! : device
+
+		if (!device.connected) {
+			client.switch({ device: device.name, name: 'CONNECTION', elements: { CONNECT: true } })
+		}
+	}
+
+	deviceDisconnect(client: IndiClient, device: Device | string) {
+		device = typeof device === 'string' ? this.device(device)! : device
+
+		if (device.connected) {
+			client.switch({ device: device.name, name: 'CONNECTION', elements: { DISCONNECT: true } })
+		}
+	}
+
+	cameraCooler(client: IndiClient, camera: Camera | string, value: boolean) {
+		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+
+		if (camera.hasCoolerControl && camera.cooler !== value) {
+			client.switch({ device: camera.name, name: 'CCD_COOLER', elements: { [value ? 'COOLER_ON' : 'COOLER_OFF']: true } })
+		}
+	}
+
+	cameraTemperature(client: IndiClient, camera: Camera | string, value: number) {
+		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+
+		if (camera.canSetTemperature) {
+			client.number({ device: camera.name, name: 'CCD_TEMPERATURE', elements: { CCD_TEMPERATURE_VALUE: value } })
+		}
+	}
+
+	cameraFrameFormat(client: IndiClient, camera: Camera | string, value: string) {
+		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+
+		if (value && camera.frameFormats.includes(value)) {
+			client.switch({ device: camera.name, name: 'CCD_CAPTURE_FORMAT', elements: { value: true } })
+		}
+	}
+
+	cameraFrame(client: IndiClient, camera: Camera | string, X: number, Y: number, WIDTH: number, HEIGHT: number) {
+		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+
+		if (camera.canSubFrame) {
+			client.number({ device: camera.name, name: 'CCD_FRAME', elements: { X, Y, WIDTH, HEIGHT } })
+		}
+	}
+
+	cameraBin(client: IndiClient, camera: Camera | string, x: number, y: number) {
+		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+
+		if (camera.canBin) {
+			client.number({ device: camera.name, name: 'CCD_BINNING', elements: { HOR_BIN: x, VER_BIN: y } })
+		}
+	}
+
+	private deviceUpdated<D extends Device>(device: D, property: keyof D, state?: PropertyState) {
+		if (this.cameras.has(device.name)) this.handler.cameraUpdated?.(device as unknown as Camera, property as keyof Camera, state)
+		this.handler.deviceUpdated?.(device, property as string, state)
+	}
+
+	private processEnqueuedMessages(client: IndiClient, device: Device) {
+		const switchMessages = this.enqueuedSwitchMessages.values().filter((e) => e[1].device === device.name)
+
+		for (const [name, message] of switchMessages) {
+			this.enqueuedSwitchMessages.delete(message.name)
+			this.switchVector(client, message, name)
+		}
+
+		const textMessages = this.enqueuedTextMessages.values().filter((e) => e[1].device === device.name)
+
+		for (const [name, message] of textMessages) {
+			this.enqueuedTextMessages.delete(message.name)
+			this.textVector(client, message, name)
+		}
+
+		const numberMessages = this.enqueuedNumberMessages.values().filter((e) => e[1].device === device.name)
+
+		for (const [name, message] of numberMessages) {
+			this.enqueuedTextMessages.delete(message.name)
+			this.numberVector(client, message, name)
 		}
 	}
 }

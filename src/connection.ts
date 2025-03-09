@@ -1,6 +1,5 @@
 import { IndiClient } from 'nebulosa/src/indi'
-import { IndiService } from './indi'
-import type { WebSocketMessageHandler } from './message'
+import type { IndiService } from './indi'
 
 export type ConnectionType = 'INDI' | 'ALPACA'
 
@@ -20,20 +19,14 @@ export interface ConnectionStatus {
 
 export class ConnectionService {
 	private readonly clients = new Map<string, IndiClient>()
-	private readonly indi = new IndiService({
-		// TODO: Handle close event to remove clients
-		cameraUpdated: (device) => {
-			this.webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
-		},
-		cameraAdded: (device) => {
-			this.webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
-		},
-		cameraRemoved: (device) => {
-			this.webSocketMessageHandler.send({ type: 'CAMERA.REMOVED', device })
-		},
-	})
+	private clientId = ''
 
-	constructor(private readonly webSocketMessageHandler: WebSocketMessageHandler) {}
+	constructor(private readonly indi: IndiService) {}
+
+	// TODO: Allow multiple clients by passing id
+	get client() {
+		return this.clients.get(this.clientId)
+	}
 
 	async connect(req: Connect): Promise<ConnectionStatus | false> {
 		const id = Bun.MD5.hash(`${req.host}:${req.port}:${req.type}`, 'hex')
@@ -44,6 +37,7 @@ export class ConnectionService {
 			const client = new IndiClient({ protocol: this.indi })
 			await client.connect(req.host, req.port)
 			this.clients.set(id, client)
+			this.clientId = id
 			return this.status(id)!
 		}
 
@@ -52,6 +46,7 @@ export class ConnectionService {
 
 	disconnect(id: string) {
 		this.clients.get(id)?.close()
+		this.clients.delete(id)
 	}
 
 	status(id: string): ConnectionStatus | false {
