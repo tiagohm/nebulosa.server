@@ -550,59 +550,73 @@ export class IndiService implements IndiClientHandler {
 		return this.properties.get(id)
 	}
 
-	deviceConnect(client: IndiClient, device: Device | string) {
-		device = typeof device === 'string' ? this.device(device)! : device
-
+	deviceConnect(client: IndiClient, device: Device) {
 		if (!device.connected) {
 			client.sendSwitch({ device: device.name, name: 'CONNECTION', elements: { CONNECT: true } })
 		}
 	}
 
-	deviceDisconnect(client: IndiClient, device: Device | string) {
-		device = typeof device === 'string' ? this.device(device)! : device
-
+	deviceDisconnect(client: IndiClient, device: Device) {
 		if (device.connected) {
 			client.sendSwitch({ device: device.name, name: 'CONNECTION', elements: { DISCONNECT: true } })
 		}
 	}
 
-	cameraCooler(client: IndiClient, camera: Camera | string, value: boolean) {
-		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
+	cameraDeviceList() {
+		return Array.from(this.cameras.values())
+	}
 
+	cameraDevice(id: string) {
+		return this.cameras.get(id)
+	}
+
+	cameraCooler(client: IndiClient, camera: Camera, value: boolean) {
 		if (camera.hasCoolerControl && camera.cooler !== value) {
 			client.sendSwitch({ device: camera.name, name: 'CCD_COOLER', elements: { [value ? 'COOLER_ON' : 'COOLER_OFF']: true } })
 		}
 	}
 
-	cameraTemperature(client: IndiClient, camera: Camera | string, value: number) {
-		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
-
+	cameraTemperature(client: IndiClient, camera: Camera, value: number) {
 		if (camera.canSetTemperature) {
 			client.sendNumber({ device: camera.name, name: 'CCD_TEMPERATURE', elements: { CCD_TEMPERATURE_VALUE: value } })
 		}
 	}
 
-	cameraFrameFormat(client: IndiClient, camera: Camera | string, value: string) {
-		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
-
+	cameraFrameFormat(client: IndiClient, camera: Camera, value: string) {
 		if (value && camera.frameFormats.includes(value)) {
 			client.sendSwitch({ device: camera.name, name: 'CCD_CAPTURE_FORMAT', elements: { value: true } })
 		}
 	}
 
-	cameraFrame(client: IndiClient, camera: Camera | string, X: number, Y: number, WIDTH: number, HEIGHT: number) {
-		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
-
+	cameraFrame(client: IndiClient, camera: Camera, X: number, Y: number, WIDTH: number, HEIGHT: number) {
 		if (camera.canSubFrame) {
 			client.sendNumber({ device: camera.name, name: 'CCD_FRAME', elements: { X, Y, WIDTH, HEIGHT } })
 		}
 	}
 
-	cameraBin(client: IndiClient, camera: Camera | string, x: number, y: number) {
-		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
-
+	cameraBin(client: IndiClient, camera: Camera, x: number, y: number) {
 		if (camera.canBin) {
 			client.sendNumber({ device: camera.name, name: 'CCD_BINNING', elements: { HOR_BIN: x, VER_BIN: y } })
+		}
+	}
+
+	cameraGain(client: IndiClient, camera: Camera, value: number) {
+		const properties = this.properties.get(camera.name)
+
+		if (properties?.CCD_CONTROLS?.elements.Gain) {
+			client.sendNumber({ device: camera.name, name: 'CCD_CONTROLS', elements: { Gain: value } })
+		} else if (properties?.CCD_GAIN?.elements?.GAIN) {
+			client.sendNumber({ device: camera.name, name: 'CCD_GAIN', elements: { GAIN: value } })
+		}
+	}
+
+	cameraOffset(client: IndiClient, camera: Camera, value: number) {
+		const properties = this.properties.get(camera.name)
+
+		if (properties?.CCD_CONTROLS?.elements.Offset) {
+			client.sendNumber({ device: camera.name, name: 'CCD_CONTROLS', elements: { Offset: value } })
+		} else if (properties?.CCD_OFFSET?.elements?.OFFSET) {
+			client.sendNumber({ device: camera.name, name: 'CCD_OFFSET', elements: { OFFSET: value } })
 		}
 	}
 

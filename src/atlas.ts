@@ -5,8 +5,6 @@ import { type DateTime, dateFrom } from 'nebulosa/src/datetime'
 import { type Distance, meter } from 'nebulosa/src/distance'
 import { Quantity, observer } from 'nebulosa/src/horizons'
 
-const BODY_POSITIONS = new Map<string, Map<number, Readonly<BodyPosition>>>()
-
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
 
 export interface PositionOfBody {
@@ -37,91 +35,95 @@ export interface BodyPosition {
 	readonly leading: boolean
 }
 
-export function imageOfSun() {}
+export class AtlasService {
+	private readonly positions = new Map<string, Map<number, Readonly<BodyPosition>>>()
 
-export function positionOfSun(req: PositionOfBody) {
-	return computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
-}
+	imageOfSun() {}
 
-export function altitudeChartOfSun(req: AltitudeChartOfBody) {
-	return computeAltitudeChart('10', dateFrom(req.dateTime, true), req.stepSize)
-}
-
-export function earthSeasons() {}
-
-export function positionOfMoon(req: PositionOfBody) {
-	return computeEphemeris('301', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
-}
-
-export function altitudeChartOfMoon(req: AltitudeChartOfBody) {
-	return computeAltitudeChart('301', dateFrom(req.dateTime, true), req.stepSize)
-}
-
-export function moonPhases() {}
-
-export function twilight() {}
-
-export function positionOfPlanet(code: string, req: PositionOfBody) {
-	return computeEphemeris(code, dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
-}
-
-export function altitudeChartOfPlanet(code: string, req: AltitudeChartOfBody) {
-	return computeAltitudeChart(code, dateFrom(req.dateTime, true), req.stepSize)
-}
-
-export function searchMinorPlanet() {}
-
-export function closeApproachesForMinorPlanets() {}
-
-export function searchSkyObject() {}
-
-export function skyObjectTypes() {}
-
-export function positionOfSkyObject(req: PositionOfBody, id: string) {}
-
-export function altitudeChartOfSkyObject(req: AltitudeChartOfBody) {}
-
-export function searchSatellites() {}
-
-export function positionOfSatellite(req: PositionOfBody, id: string) {}
-
-export function altitudeChartOfSatellite(req: AltitudeChartOfBody) {}
-
-async function computeEphemeris(code: string, dateTime: DateTime, longitude: number, latitude: Angle, elevation: Distance) {
-	const time = timeWithoutSeconds(dateTime)
-
-	const position = BODY_POSITIONS.get(code)?.get(time)
-	if (position) return position
-
-	let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
-	if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
-	const endTime = startTime.add(1, 'day')
-
-	const ephemeris = await observer(code, 'coord', [longitude, latitude, elevation], startTime, endTime, HORIZONS_QUANTITIES)
-	const positions = makeBodyPositionFromEphemeris(ephemeris!)
-	if (!BODY_POSITIONS.has(code)) BODY_POSITIONS.set(code, new Map())
-	const map = BODY_POSITIONS.get(code)!
-	positions.forEach((e) => map.set(e[0], e[1]))
-	return map.get(time)!
-}
-
-function computeAltitudeChart(code: string, dateTime: DateTime, stepSizeInMinutes: number) {
-	const positions = BODY_POSITIONS.get(code)!
-
-	let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
-	if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
-	const time = timeWithoutSeconds(startTime)
-	const altitude: number[] = []
-
-	altitude.push(positions.get(time)!.altitude)
-
-	for (let i = stepSizeInMinutes; i <= 1440 - stepSizeInMinutes; i += stepSizeInMinutes) {
-		altitude.push(positions.get(time + i * 60)!.altitude)
+	positionOfSun(req: PositionOfBody) {
+        return this.computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 	}
 
-	altitude.push(positions.get(time + 1440 * 60)!.altitude)
+	altitudeChartOfSun(req: AltitudeChartOfBody) {
+		return this.computeAltitudeChart('10', dateFrom(req.dateTime, true), req.stepSize)
+	}
 
-	return altitude
+	earthSeasons() {}
+
+	positionOfMoon(req: PositionOfBody) {
+		return this.computeEphemeris('301', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
+	}
+
+	altitudeChartOfMoon(req: AltitudeChartOfBody) {
+		return this.computeAltitudeChart('301', dateFrom(req.dateTime, true), req.stepSize)
+	}
+
+	moonPhases() {}
+
+	twilight() {}
+
+	positionOfPlanet(code: string, req: PositionOfBody) {
+		return this.computeEphemeris(code, dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
+	}
+
+	altitudeChartOfPlanet(code: string, req: AltitudeChartOfBody) {
+		return this.computeAltitudeChart(code, dateFrom(req.dateTime, true), req.stepSize)
+	}
+
+	searchMinorPlanet() {}
+
+	closeApproachesForMinorPlanets() {}
+
+	searchSkyObject() {}
+
+	skyObjectTypes() {}
+
+	positionOfSkyObject(req: PositionOfBody, id: string) {}
+
+	altitudeChartOfSkyObject(req: AltitudeChartOfBody) {}
+
+	searchSatellites() {}
+
+	positionOfSatellite(req: PositionOfBody, id: string) {}
+
+	altitudeChartOfSatellite(req: AltitudeChartOfBody) {}
+
+	private async computeEphemeris(code: string, dateTime: DateTime, longitude: number, latitude: Angle, elevation: Distance) {
+		const time = timeWithoutSeconds(dateTime)
+
+		const position = this.positions.get(code)?.get(time)
+		if (position) return position
+
+		let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
+		if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
+		const endTime = startTime.add(1, 'day')
+
+		const ephemeris = await observer(code, 'coord', [longitude, latitude, elevation], startTime, endTime, HORIZONS_QUANTITIES)
+        const positions = makeBodyPositionFromEphemeris(ephemeris!)
+		if (!this.positions.has(code)) this.positions.set(code, new Map())
+		const map = this.positions.get(code)!
+		positions.forEach((e) => map.set(e[0], e[1]))
+		return map.get(time)!
+	}
+
+	private computeAltitudeChart(code: string, dateTime: DateTime, stepSizeInMinutes: number) {
+		const positions = this.positions.get(code)!
+
+		let startTime = dateTime.set('hour', 12).set('minute', 0).set('second', 0).set('millisecond', 0)
+		if (dateTime.hour() < 12) startTime = startTime.subtract(1, 'day')
+		const time = timeWithoutSeconds(startTime)
+		const altitude: number[] = []
+
+		altitude.push(positions.get(time)!.altitude)
+
+		for (let i = stepSizeInMinutes; i <= 1440 - stepSizeInMinutes; i += stepSizeInMinutes) {
+			altitude.push(positions.get(time + i * 60)!.altitude)
+		}
+
+		altitude.push(positions.get(time + 1440 * 60)!.altitude)
+
+		return altitude
+	}
 }
 
 function makeBodyPositionFromEphemeris(ephemeris: CsvRow[]): readonly [number, BodyPosition][] {

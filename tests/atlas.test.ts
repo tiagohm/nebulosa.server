@@ -1,12 +1,13 @@
 import { expect, test } from 'bun:test'
-// biome-ignore format:
-import { type PositionOfBody, altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSun, positionOfMoon, positionOfPlanet, positionOfSun } from '../src/atlas'
+import { AtlasService, type PositionOfBody } from '../src/atlas'
 
 process.env.TZ = 'America/Sao_Paulo'
 
+const service = new AtlasService()
+
 test('positionOfSun', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-31T21:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	const response = await positionOfSun(request)
+	const response = await service.positionOfSun(request)
 
 	expect(response.rightAscensionJ2000).toBeCloseTo(5.487010782848625, 12)
 	expect(response.declinationJ2000).toBeCloseTo(-0.3004046745898624, 12)
@@ -25,7 +26,7 @@ test('positionOfSun', async () => {
 
 test('positionOfMoon', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-15T21:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	const response = await positionOfMoon(request)
+	const response = await service.positionOfMoon(request)
 
 	expect(response.rightAscensionJ2000).toBeCloseTo(2.510279836007113, 12)
 	expect(response.declinationJ2000).toBeCloseTo(0.31919436571805776, 12)
@@ -44,7 +45,7 @@ test('positionOfMoon', async () => {
 
 test('positionOfMars', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-31T21:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	const response = await positionOfPlanet('499', request)
+	const response = await service.positionOfPlanet('499', request)
 
 	expect(response.rightAscensionJ2000).toBeCloseTo(1.9632543785239203, 12)
 	expect(response.declinationJ2000).toBeCloseTo(0.45620236293376226, 12)
@@ -63,8 +64,8 @@ test('positionOfMars', async () => {
 
 test('altitudePointsOfSun', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-31T15:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	await positionOfSun(request)
-	const response = altitudeChartOfSun({ ...request, stepSize: 5 })
+	await service.positionOfSun(request)
+	const response = service.altitudeChartOfSun({ ...request, stepSize: 5 })
 
 	expect(response).toHaveLength(289)
 	expect(response[0]).toBeCloseTo(0.7755328294268905, 12)
@@ -73,8 +74,8 @@ test('altitudePointsOfSun', async () => {
 
 test('altitudePointsOfMoon', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-15T21:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	await positionOfMoon(request)
-	const response = altitudeChartOfMoon({ ...request, stepSize: 5 })
+	await service.positionOfMoon(request)
+	const response = service.altitudeChartOfMoon({ ...request, stepSize: 5 })
 
 	expect(response).toHaveLength(289)
 	expect(response[0]).toBeCloseTo(-0.47675490641964197, 12)
@@ -83,8 +84,8 @@ test('altitudePointsOfMoon', async () => {
 
 test('altitudePointsOfMars', async () => {
 	const request: PositionOfBody = { dateTime: '2025-01-31T21:36:00', longitude: -45, latitude: -23, elevation: 890 }
-	await positionOfPlanet('499', request)
-	const response = altitudeChartOfPlanet('499', { ...request, stepSize: 5 })
+	await service.positionOfPlanet('499', request)
+	const response = service.altitudeChartOfPlanet('499', { ...request, stepSize: 5 })
 
 	expect(response).toHaveLength(289)
 	expect(response[0]).toBeCloseTo(-1.127593682275471, 12)

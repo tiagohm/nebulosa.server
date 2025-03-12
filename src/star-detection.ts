@@ -10,10 +10,12 @@ export interface StarDetection {
 	slot: number
 }
 
-export async function detectStars(req: StarDetection) {
-	if (req.type === 'ASTAP') {
-		return await astapDetectStars(req.path, req)
-	}
+export class StarDetectionService {
+	async detectStars(req: StarDetection) {
+		if (req.type === 'ASTAP') {
+			return await astapDetectStars(req.path, req)
+		}
 
-	return []
+		return []
+	}
 }

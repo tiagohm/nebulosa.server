@@ -60,34 +60,36 @@ interface CachedImage {
 	image?: Image
 }
 
-const images = new Map<string, CachedImage>()
+export class ImageService {
+	private readonly images = new Map<string, CachedImage>()
 
-export async function openImage(req: OpenImage) {
-	const handle = await fs.open(req.path)
-	const source = fileHandleSource(handle)
-	const fits = await readFits(source)
+	async open(req: OpenImage) {
+		const handle = await fs.open(req.path)
+		const source = fileHandleSource(handle)
+		const fits = await readFits(source)
 
-	if (fits) {
-		const image = await readImageFromFits(fits)
+		if (fits) {
+			const image = await readImageFromFits(fits)
 
-		if (image) {
-			const id = Bun.randomUUIDv7()
-			await writeImageToFormat(image, '', req.transformation.useJPEG ? 'jpeg' : 'png')
-			images.set(id, { fits, image })
+			if (image) {
+				const id = Bun.randomUUIDv7()
+				await writeImageToFormat(image, '', req.transformation.useJPEG ? 'jpeg' : 'png')
+				this.images.set(id, { fits, image })
+			}
 		}
 	}
+
+	close(q: CloseImage) {
+		this.images.delete(q.id)
+	}
+
+	save() {}
+
+	analyze() {}
+
+	annotate() {}
+
+	coordinateInterpolation() {}
+
+	statistics() {}
 }
-
-export function closeImage(q: CloseImage) {
-	images.delete(q.id)
-}
-
-export function saveImage() {}
-
-export function analyzeImage() {}
-
-export function annotateImage() {}
-
-export function coordinateInterpolation() {}
-
-export function statistics() {}

@@ -28,7 +28,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -68,7 +68,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"stepSize\": 5\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -108,7 +108,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -148,7 +148,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"stepSize\": 5\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -188,7 +188,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"longitude\": -45,\n    \"latitude\": -23,\n    \"elevation\": 890\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -229,7 +229,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"dateTime\": \"2025-01-31T21:36:00\",\n    \"stepSize\": 5\n}",
+							"raw": "{\n    \"dateTime\": \"{{$isoTimestamp}}\",\n    \"stepSize\": 5\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -509,6 +509,86 @@
 							],
 							"path": [
 								"star-detection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "INDI",
+			"item": [
+				{
+					"name": "Connect",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/indi/{{cameraId}}/connect",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"indi",
+								"{{cameraId}}",
+								"connect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Disconnect",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/indi/{{cameraId}}/disconnect",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"indi",
+								"{{cameraId}}",
+								"disconnect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Device By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/indi/{{cameraId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"indi",
+								"{{cameraId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Properties",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/indi/{{cameraId}}/properties",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"indi",
+								"{{cameraId}}",
+								"properties"
 							]
 						}
 					},

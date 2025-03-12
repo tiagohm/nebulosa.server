@@ -1,17 +1,17 @@
-import type { WebSocketHandler } from 'bun'
+import type { BunRequest, WebSocketHandler } from 'bun'
 import { parseArgs } from 'util'
 import fovCameras from './data/cameras.json' with { type: 'json' }
 import hipsSurveys from './data/hips-surveys.json' with { type: 'json' }
 import fovTelescopes from './data/telescopes.json' with { type: 'json' }
-// biome-ignore format:
-import { altitudeChartOfMoon, altitudeChartOfPlanet, altitudeChartOfSatellite, altitudeChartOfSkyObject, altitudeChartOfSun, closeApproachesForMinorPlanets, earthSeasons, moonPhases, positionOfMoon, positionOfPlanet, positionOfSatellite, positionOfSkyObject, positionOfSun, searchMinorPlanet, searchSatellites, searchSkyObject, skyObjectTypes, twilight } from './src/atlas'
+import { AtlasService } from './src/atlas'
 import { ConfirmationService } from './src/confirmation'
 import { ConnectionService } from './src/connection'
-import { frame } from './src/framing'
-import { analyzeImage, annotateImage, closeImage, coordinateInterpolation, openImage, saveImage, statistics } from './src/image'
+import { ImageService } from './src/image'
 import { IndiService } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
-import { detectStars } from './src/star-detection'
+import { StarDetectionService } from './src/star-detection'
+
+type RouteWith<T extends string> = `${string}:${T}${string}`
 
 const args = parseArgs({
 	args: Bun.argv,
@@ -34,29 +34,128 @@ const corsHeaders = {
 	'Access-Control-Expose-Headers': 'X-Image-Info',
 }
 
+// Responses
+
 const noResponse = new Response()
 const corsResponse = new Response(null, { headers: corsHeaders })
 const hipsSurveysResponse = Response.json(hipsSurveys)
 const fovCameraResponse = Response.json(fovCameras)
 const fovTelescopeResponse = Response.json(fovTelescopes)
+const deviceNotFoundResponse = Response.json('Device not found', { status: 404 })
+
+// Services
 
 const webSocketMessageHandler = new WebSocketMessageHandler()
 
 const indi = new IndiService({
 	// TODO: Handle close event to remove clients
-	cameraUpdated: (device, property) => {
+	deviceUpdated: (device, property) => {
+		console.log('updated:', property, (device as never)[property])
 		webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
 	},
-	cameraAdded: (device) => {
+	deviceAdded: (device) => {
+		console.log('added:', device.name)
 		webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
 	},
-	cameraRemoved: (device) => {
+	deviceRemoved: (device) => {
+		console.log('removed:', device.name)
 		webSocketMessageHandler.send({ type: 'CAMERA.REMOVED', device })
 	},
 })
 
 const connection = new ConnectionService(indi)
 const confirmation = new ConfirmationService(webSocketMessageHandler)
+const atlas = new AtlasService()
+const image = new ImageService()
+const starDetection = new StarDetectionService()
+
+// Connection
+
+async function connect(req: BunRequest<string>) {
+	return Response.json(await connection.connect(await req.json()))
+}
+
+function disconnect(req: BunRequest<RouteWith<'id'>>) {
+	return Response.json(connection.disconnect(req.params.id))
+}
+
+function connectionList() {
+	return Response.json(connection.list())
+}
+
+function connectionStatus(req: BunRequest<RouteWith<'id'>>) {
+	return Response.json(connection.status(req.params.id))
+}
+
+// Confirmation
+
+async function confirm(req: BunRequest<string>) {
+	return Response.json(confirmation.confirm(await req.json()))
+}
+
+// INDI
+
+function indiDevice(req: BunRequest<RouteWith<'id'>>) {
+	return Response.json(indi.device(req.params.id))
+}
+
+function indiDeviceConnect(req: BunRequest<RouteWith<'id'>>) {
+	const device = indi.device(req.params.id)
+	if (!device) return deviceNotFoundResponse
+	return Response.json(indi.deviceConnect(connection.client!, device))
+}
+
+function indiDeviceDisconnect(req: BunRequest<RouteWith<'id'>>) {
+	const device = indi.device(req.params.id)
+	if (!device) return deviceNotFoundResponse
+	return Response.json(indi.deviceDisconnect(connection.client!, device))
+}
+
+function indiDeviceProperties(req: BunRequest<RouteWith<'id'>>) {
+	return Response.json(indi.deviceProperties(req.params.id))
+}
+
+// Atlas
+
+async function positionOfSun(req: BunRequest<string>) {
+	return Response.json(await atlas.positionOfSun(await req.json()))
+}
+
+async function altitudeChartOfSun(req: BunRequest<string>) {
+	return Response.json(atlas.altitudeChartOfSun(await req.json()))
+}
+
+async function positionOfMoon(req: BunRequest<string>) {
+	return Response.json(await atlas.positionOfMoon(await req.json()))
+}
+
+async function altitudeChartOfMoon(req: BunRequest<string>) {
+	return Response.json(atlas.altitudeChartOfMoon(await req.json()))
+}
+
+async function positionOfPlanet(req: BunRequest<RouteWith<'code'>>) {
+	return Response.json(await atlas.positionOfPlanet(req.params.code, await req.json()))
+}
+
+async function altitudeChartOfPlanet(req: BunRequest<RouteWith<'code'>>) {
+	return Response.json(atlas.altitudeChartOfPlanet(req.params.code, await req.json()))
+}
+
+// Image
+
+async function imageOpen(req: BunRequest<string>) {
+	return Response.json(image.open(await req.json()))
+}
+
+async function imageClose(req: BunRequest<string>) {
+	return Response.json(image.close(await req.json()))
+}
+
+// Star Detection
+
+async function detectStars(req: BunRequest<string>) {
+	return Response.json(await starDetection.detectStars(await req.json()))
+}
 
 // @ts-ignore
 const server = Bun.serve({
@@ -64,56 +163,56 @@ const server = Bun.serve({
 	port,
 	routes: {
 		// Connection
-		'/connections': { POST: async (req) => Response.json(await connection.connect(await req.json())), GET: () => Response.json(connection.list()) },
-		'/connections/:id': { GET: (req) => Response.json(connection.status(req.params.id)), DELETE: (req) => Response.json(connection.disconnect(req.params.id)) },
+		'/connections': { POST: (req) => connect(req), GET: () => connectionList() },
+		'/connections/:id': { GET: (req) => connectionStatus(req), DELETE: (req) => disconnect(req) },
 
 		// Confirmation
-		'/confirmation': { POST: async (req) => Response.json(confirmation.confirm(await req.json())) },
+		'/confirmation': { POST: (req) => confirm(req) },
 
 		// INDI
-		'/indi/:id': { GET: (req) => Response.json(indi.device(req.params.id)) },
-		'/indi/:id/connect': { POST: (req) => Response.json(indi.deviceConnect(connection.client!, req.params.id)) },
-		'/indi/:id/disconnect': { POST: (req) => Response.json(indi.deviceDisconnect(connection.client!, req.params.id)) },
-		'/indi/:id/properties': { GET: (req) => Response.json(indi.deviceProperties(req.params.id)) },
+		'/indi/:id': { GET: (req) => indiDevice(req) },
+		'/indi/:id/connect': { POST: (req) => indiDeviceConnect(req) },
+		'/indi/:id/disconnect': { POST: (req) => indiDeviceDisconnect(req) },
+		'/indi/:id/properties': { GET: (req) => indiDeviceProperties(req) },
 
 		// Atlas
 		'/atlas/sun/image': noResponse, // TODO: Use server.reload(options) to update the image.
-		'/atlas/sun/position': { POST: async (req) => Response.json(await positionOfSun(await req.json())) },
-		'/atlas/sun/altitude-chart': { POST: async (req) => Response.json(altitudeChartOfSun(await req.json())) },
-		'/atlas/earth/seasons': { POST: async (req) => Response.json(earthSeasons()) },
-		'/atlas/moon/position': { POST: async (req) => Response.json(await positionOfMoon(await req.json())) },
-		'/atlas/moon/altitude-chart': { POST: async (req) => Response.json(altitudeChartOfMoon(await req.json())) },
-		'/atlas/moon/phases': { POST: async (req) => Response.json(moonPhases()) },
-		'/atlas/twilight': { POST: async (req) => Response.json(twilight()) },
-		'/atlas/planets/:code/position': { POST: async (req) => Response.json(await positionOfPlanet(req.params.code, await req.json())) },
-		'/atlas/planets/:code/altitude-chart': { POST: async (req) => Response.json(altitudeChartOfPlanet(req.params.code, await req.json())) },
-		'/atlas/minor-planets': { POST: async (req) => Response.json(searchMinorPlanet()) },
-		'/atlas/minor-planets/close-approaches': { POST: async (req) => Response.json(closeApproachesForMinorPlanets()) },
-		'/atlas/sky-objects': { POST: async (req) => Response.json(searchSkyObject()) },
-		'/atlas/sky-objects/types': { POST: async (req) => Response.json(skyObjectTypes()) },
-		'/atlas/sky-objects/:id/position': { POST: async (req) => Response.json(await positionOfSkyObject(await req.json(), req.params.id)) },
-		'/atlas/sky-objects/:id/altitude-chart': { POST: async (req) => Response.json(altitudeChartOfSkyObject(await req.json())) },
-		'/atlas/satellites': { POST: async (req) => Response.json(searchSatellites()) },
-		'/atlas/satellites/:id/position': { POST: async (req) => Response.json(await positionOfSatellite(await req.json(), req.params.id)) },
-		'/atlas/satellites/:id/altitude-chart': { POST: async (req) => Response.json(altitudeChartOfSatellite(await req.json())) },
+		'/atlas/sun/position': { POST: (req) => positionOfSun(req) },
+		'/atlas/sun/altitude-chart': { POST: (req) => altitudeChartOfSun(req) },
+		// '/atlas/earth/seasons': { POST: (req) => Response.json(earthSeasons()) },
+		'/atlas/moon/position': { POST: (req) => positionOfMoon(req) },
+		'/atlas/moon/altitude-chart': { POST: (req) => altitudeChartOfMoon(req) },
+		// '/atlas/moon/phases': { POST: (req) => Response.json(moonPhases()) },
+		// '/atlas/twilight': { POST: (req) => Response.json(twilight()) },
+		'/atlas/planets/:code/position': { POST: (req) => positionOfPlanet(req) },
+		'/atlas/planets/:code/altitude-chart': { POST: (req) => altitudeChartOfPlanet(req) },
+		// '/atlas/minor-planets': { POST: (req) => Response.json(searchMinorPlanet()) },
+		// '/atlas/minor-planets/close-approaches': { POST: (req) => Response.json(closeApproachesForMinorPlanets()) },
+		// '/atlas/sky-objects': { POST: (req) => Response.json(searchSkyObject()) },
+		// '/atlas/sky-objects/types': { POST: (req) => Response.json(skyObjectTypes()) },
+		// '/atlas/sky-objects/:id/position': { POST: (req) => Response.json(await positionOfSkyObject(await req.json(), req.params.id)) },
+		// '/atlas/sky-objects/:id/altitude-chart': { POST: (req) => Response.json(altitudeChartOfSkyObject(await req.json())) },
+		// '/atlas/satellites': { POST: (req) => Response.json(searchSatellites()) },
+		// '/atlas/satellites/:id/position': { POST: (req) => Response.json(await positionOfSatellite(await req.json(), req.params.id)) },
+		//'/atlas/satellites/:id/altitude-chart': { POST: (req) => Response.json(altitudeChartOfSatellite(await req.json())) },
 
 		// Framing
-		'/framing': { POST: async (req) => new Response(await frame(await req.json())) },
+		// '/framing': { POST: (req) => new Response(await frame(await req.json())) },
 		'/framing/hips-surveys': hipsSurveysResponse,
 
 		// Image
-		'/image/open': { POST: async (req) => Response.json(await openImage(await req.json())) },
-		'/image/close': { POST: async (req) => Response.json(closeImage(await req.json())) },
-		'/image/save': { POST: (req) => Response.json(saveImage()) },
-		'/image/analyze': { POST: (req) => Response.json(analyzeImage()) },
-		'/image/annotate': { POST: (req) => Response.json(annotateImage()) },
-		'/image/coordinate-interpolation': { POST: () => Response.json(coordinateInterpolation()) },
-		'/image/statistics': { POST: () => Response.json(statistics()) },
+		'/image/open': { POST: (req) => imageOpen(req) },
+		'/image/close': { POST: (req) => imageClose(req) },
+		// '/image/save': { POST: (req) => Response.json(saveImage()) },
+		// '/image/analyze': { POST: (req) => Response.json(analyzeImage()) },
+		// '/image/annotate': { POST: (req) => Response.json(annotateImage()) },
+		// '/image/coordinate-interpolation': { POST: () => Response.json(coordinateInterpolation()) },
+		// '/image/statistics': { POST: () => Response.json(statistics()) },
 		'/image/fov-cameras': () => fovCameraResponse,
 		'/image/fov-telescopes': () => fovTelescopeResponse,
 
 		// Star Detection
-		'/star-detection': { POST: async (req) => Response.json(await detectStars(await req.json())) },
+		'/star-detection': { POST: (req) => detectStars(req) },
 
 		// WebSocket
 		// @ts-ignore

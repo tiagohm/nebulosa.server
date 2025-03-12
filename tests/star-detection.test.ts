@@ -1,11 +1,12 @@
 import { expect, test } from 'bun:test'
 import os from 'os'
 import { join } from 'path'
-import { type StarDetection, detectStars } from '../src/star-detection'
+import { type StarDetection, StarDetectionService } from '../src/star-detection'
 
 process.env.TZ = 'America/Sao_Paulo'
 
 const apod4 = Bun.file(join(os.tmpdir(), 'apod4.jpg'))
+const service = new StarDetectionService()
 
 test.skip('detectStars', async () => {
 	if (!(await apod4.exists())) {
@@ -23,7 +24,7 @@ test.skip('detectStars', async () => {
 		slot: 0,
 	}
 
-	const response = await detectStars(request)
+	const response = await service.detectStars(request)
 
 	expect(response).toHaveLength(344)
 })
