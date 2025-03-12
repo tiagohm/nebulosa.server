@@ -1,5 +1,5 @@
 // biome-ignore format:
-import { type DefNumberVector, type DefSwitchVector, type DefTextVector, type IndiClient, type IndiClientHandler, type NumberVectorTag, PropertyPermission, PropertyState, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SwitchVectorTag, type TextVectorTag } from 'nebulosa/src/indi'
+import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
 
 export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'SWITCH' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
 
@@ -40,10 +40,6 @@ export interface Device {
 	driver: DriverInfo
 }
 
-export interface CompanionDevice<D extends Device> extends Device {
-	main: D
-}
-
 export interface Thermometer extends Device {
 	hasThermometer: boolean
 	temperature: number
@@ -55,7 +51,6 @@ export interface GuideOutput extends Device {
 }
 
 export interface Camera extends GuideOutput, Thermometer {
-	exposuring: boolean
 	hasCoolerControl: boolean
 	coolerPower: number
 	cooler: boolean
@@ -68,54 +63,65 @@ export interface Camera extends GuideOutput, Thermometer {
 		offsetY: number
 		type: CfaPattern
 	}
-	exposureMin: number
-	exposureMax: number
-	exposureState: PropertyState
-	exposureTime: number
+	exposure: {
+		time: number
+		min: number
+		max: number
+		state: PropertyState
+	}
 	hasCooler: boolean
 	canSetTemperature: boolean
 	canSubFrame: boolean
-	x: number
-	minX: number
-	maxX: number
-	y: number
-	minY: number
-	maxY: number
-	width: number
-	minWidth: number
-	maxWidth: number
-	height: number
-	minHeight: number
-	maxHeight: number
+	frame: {
+		x: number
+		minX: number
+		maxX: number
+		y: number
+		minY: number
+		maxY: number
+		width: number
+		minWidth: number
+		maxWidth: number
+		height: number
+		minHeight: number
+		maxHeight: number
+	}
 	canBin: boolean
-	maxBinX: number
-	maxBinY: number
-	binX: number
-	binY: number
-	gain: number
-	gainMin: number
-	gainMax: number
-	offset: number
-	offsetMin: number
-	offsetMax: number
-	guideHead?: GuideHead
+	bin: {
+		maxX: number
+		maxY: number
+		x: number
+		y: number
+	}
+	gain: {
+		value: number
+		min: number
+		max: number
+	}
+	offset: {
+		value: number
+		min: number
+		max: number
+	}
 	pixelSize: {
 		x: number
 		y: number
 	}
 }
 
-export interface GuideHead extends Exclude<Camera, 'guideHead'>, CompanionDevice<Camera> {}
-
 export interface IndiDeviceEventHandler {
 	readonly deviceUpdated?: (device: Device, property: string, state?: PropertyState) => void
+	readonly deviceAdded?: (device: Device) => void
+	readonly deviceRemoved?: (device: Device) => void
 	readonly cameraUpdated?: (camera: Camera, property: keyof Camera, state?: PropertyState) => void
 	readonly cameraAdded?: (camera: Camera) => void
 	readonly cameraRemoved?: (camera: Camera) => void
+	readonly thermometerUpdated?: (thermometer: Thermometer, property: keyof Thermometer, state?: PropertyState) => void
+	readonly thermometerAdded?: (thermometer: Thermometer) => void
+	readonly thermometerRemoved?: (thermometer: Thermometer) => void
 }
 
 const EMPTY_CAMERA: Camera = {
-	exposuring: false,
 	hasCoolerControl: false,
 	coolerPower: 0,
 	cooler: false,
@@ -128,36 +134,46 @@ const EMPTY_CAMERA: Camera = {
 		offsetY: 0,
 		type: 'RGGB',
 	},
-	exposureMin: 0,
-	exposureMax: 0,
-	exposureState: PropertyState.IDLE,
-	exposureTime: 0,
+	exposure: {
+		time: 0,
+		min: 0,
+		max: 0,
+		state: PropertyState.IDLE,
+	},
 	hasCooler: false,
 	canSetTemperature: false,
 	canSubFrame: false,
-	x: 0,
-	minX: 0,
-	maxX: 0,
-	y: 0,
-	minY: 0,
-	maxY: 0,
-	width: 0,
-	minWidth: 0,
-	maxWidth: 0,
-	height: 0,
-	minHeight: 0,
-	maxHeight: 0,
+	frame: {
+		x: 0,
+		minX: 0,
+		maxX: 0,
+		y: 0,
+		minY: 0,
+		maxY: 0,
+		width: 0,
+		minWidth: 0,
+		maxWidth: 0,
+		height: 0,
+		minHeight: 0,
+		maxHeight: 0,
+	},
 	canBin: false,
-	maxBinX: 0,
-	maxBinY: 0,
-	binX: 0,
-	binY: 0,
-	gain: 0,
-	gainMin: 0,
-	gainMax: 0,
-	offset: 0,
-	offsetMin: 0,
-	offsetMax: 0,
+	bin: {
+		maxX: 0,
+		maxY: 0,
+		x: 0,
+		y: 0,
+	},
+	gain: {
+		value: 0,
+		min: 0,
+		max: 0,
+	},
+	offset: {
+		value: 0,
+		min: 0,
+		max: 0,
+	},
 	pixelSize: {
 		x: 0,
 		y: 0,
@@ -176,22 +192,30 @@ const EMPTY_CAMERA: Camera = {
 	temperature: 0,
 }
 
+export function isCamera(device: Device): device is Camera {
+	return device.type === 'CAMERA'
+}
+
+const THERMOMETER_PROPERTIES = ['termometer']
+
 export class IndiService implements IndiClientHandler {
 	private readonly cameras = new Map<string, Camera>()
-	private readonly enqueuedSwitchMessages = new Map<string, [SwitchVectorTag, DefSwitchVector | SetSwitchVector]>()
-	private readonly enqueuedTextMessages = new Map<string, [TextVectorTag, DefTextVector | SetTextVector]>()
-	private readonly enqueuedNumberMessages = new Map<string, [NumberVectorTag, DefNumberVector | SetNumberVector]>()
-	// private readonly deviceProperties = new Map<string, >()
+	private readonly thermometers = new Map<string, Camera>()
+	private readonly enqueuedMessages: [string, DefVector | SetVector][] = []
+	private readonly properties = new Map<string, Record<string, DefVector>>()
+	private readonly rejectedDevices = new Set<string>()
 
 	constructor(private readonly handler: IndiDeviceEventHandler) {}
 
-	switchVector(client: IndiClient, message: DefSwitchVector | SetSwitchVector, tag: SwitchVectorTag) {
-		const device = this.cameras.get(message.device)
+	switchVector(client: IndiClient, message: DefSwitchVector | SetSwitchVector, tag: string) {
+		const device = this.device(message.device)
 
 		if (!device) {
-			this.enqueuedSwitchMessages.set(message.name, [tag, message])
+			this.enqueueMessage(message, tag)
 			return
 		}
+
+		this.addProperty(device, message, tag)
 
 		switch (message.name) {
 			case 'CONNECTION': {
@@ -206,33 +230,39 @@ export class IndiService implements IndiClientHandler {
 				return
 			}
 			case 'CCD_COOLER': {
-				if (tag.startsWith('d')) {
-					device.hasCoolerControl = true
-					this.deviceUpdated(device, 'hasCoolerControl', message.state)
-				}
+				if (isCamera(device)) {
+					if (tag[0] === 'd') {
+						device.hasCoolerControl = true
+						this.deviceUpdated(device, 'hasCoolerControl', message.state)
+					}
 
-				const cooler = message.elements.COOLER_ON?.value === true
+					const cooler = message.elements.COOLER_ON?.value === true
 
-				if (cooler !== device.cooler) {
-					device.cooler = cooler
-					this.deviceUpdated(device, 'cooler', message.state)
+					if (cooler !== device.cooler) {
+						device.cooler = cooler
+						this.deviceUpdated(device, 'cooler', message.state)
+					}
 				}
 
 				return
 			}
 			case 'CCD_CAPTURE_FORMAT': {
-				if (tag.startsWith('d')) {
-					device.frameFormats = Object.keys(message.elements)
-					this.deviceUpdated(device, 'frameFormats', message.state)
+				if (isCamera(device)) {
+					if (tag[0] === 'd') {
+						device.frameFormats = Object.keys(message.elements)
+						this.deviceUpdated(device, 'frameFormats', message.state)
+					}
 				}
 
 				return
 			}
-			case 'CCD_ABORT_EXPOSURE':
-			case 'GUIDER_ABORT_EXPOSURE': {
-				if (tag.startsWith('d')) {
-					device.canAbort = (message as DefSwitchVector).permission !== PropertyPermission.READ_ONLY
-					this.deviceUpdated(device, 'canAbort', message.state)
+			case 'CCD_ABORT_EXPOSURE': {
+				if (isCamera(device)) {
+					if (tag[0] === 'd') {
+						const canAbort = (message as DefSwitchVector).permission !== PropertyPermission.READ_ONLY
+						device.canAbort = canAbort
+						this.deviceUpdated(device, 'canAbort', message.state)
+					}
 				}
 
 				return
@@ -240,76 +270,291 @@ export class IndiService implements IndiClientHandler {
 		}
 	}
 
-	textVector(client: IndiClient, message: DefTextVector | SetTextVector, tag: TextVectorTag) {
+	textVector(client: IndiClient, message: DefTextVector | SetTextVector, tag: string) {
 		switch (message.name) {
 			case 'DRIVER_INFO': {
 				const type = parseInt(message.elements.DRIVER_INTERFACE.value)
 				const executable = message.elements.DRIVER_EXEC.value
 				const version = message.elements.DRIVER_VERSION.value
 
+				let reject = true
+
 				if (isInterfaceType(type, DeviceInterfaceType.CCD)) {
+					reject = false
+
 					if (!this.cameras.has(message.device)) {
-						const camera: Camera = { ...EMPTY_CAMERA, name: message.device, driver: { executable, version } }
-						this.cameras.set(message.device, camera)
+						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version } }
+						this.cameras.set(camera.name, camera)
+						this.addProperty(camera, message, tag)
 						this.processEnqueuedMessages(client, camera)
 						this.handler.cameraAdded?.(camera)
+						this.handler.deviceAdded?.(camera)
 					}
 				} else if (this.cameras.has(message.device)) {
 					const camera = this.cameras.get(message.device)!
-					this.cameras.delete(message.device)
-					this.handler.cameraRemoved?.(camera)
+					this.removeCamera(camera)
+				}
+
+				if (reject) {
+					this.rejectedDevices.add(message.device)
 				}
 
 				return
 			}
 		}
 
-		const device = this.cameras.get(message.device)
+		const device = this.device(message.device)
 
 		if (!device) {
-			this.enqueuedTextMessages.set(message.name, [tag, message])
+			this.enqueueMessage(message, tag)
 			return
 		}
 
+		this.addProperty(device, message, tag)
+
 		switch (message.name) {
 			case 'CCD_CFA': {
-				device.cfa.offsetX = parseInt(message.elements.CFA_OFFSET_X.value)
-				device.cfa.offsetY = parseInt(message.elements.CFA_OFFSET_Y.value)
-				device.cfa.type = message.elements.CFA_TYPE.value as CfaPattern
-				this.deviceUpdated(device, 'cfa', message.state)
+				if (isCamera(device)) {
+					device.cfa.offsetX = parseInt(message.elements.CFA_OFFSET_X.value)
+					device.cfa.offsetY = parseInt(message.elements.CFA_OFFSET_Y.value)
+					device.cfa.type = message.elements.CFA_TYPE.value as CfaPattern
+					this.deviceUpdated(device, 'cfa', message.state)
+				}
+
 				return
 			}
 		}
 	}
 
-	numberVector(client: IndiClient, message: DefNumberVector | SetNumberVector, tag: NumberVectorTag) {
-		const device = this.cameras.get(message.device)
+	numberVector(client: IndiClient, message: DefNumberVector | SetNumberVector, tag: string) {
+		const device = this.device(message.device)
 
 		if (!device) {
-			this.enqueuedNumberMessages.set(message.name, [tag, message])
+			this.enqueueMessage(message, tag)
 			return
 		}
 
+		this.addProperty(device, message, tag)
+
 		switch (message.name) {
-			case 'CCD_INFO':
-			case 'GUIDER_INFO': {
-				device.pixelSize.x = message.elements.CCD_PIXEL_SIZE_X?.value ?? 0
-				device.pixelSize.y = message.elements.CCD_PIXEL_SIZE_Y?.value ?? 0
-				this.deviceUpdated(device, 'pixelSize', message.state)
+			case 'CCD_INFO': {
+				if (isCamera(device)) {
+					const x = message.elements.CCD_PIXEL_SIZE_X?.value ?? 0
+					const y = message.elements.CCD_PIXEL_SIZE_Y?.value ?? 0
+
+					if (device.pixelSize.x !== x || device.pixelSize.y !== y) {
+						device.pixelSize.x = x
+						device.pixelSize.y = y
+						this.deviceUpdated(device, 'pixelSize', message.state)
+					}
+				}
+
+				return
+			}
+			case 'CCD_EXPOSURE': {
+				if (isCamera(device)) {
+					const value = message.elements.CCD_EXPOSURE_VALUE
+					let update = false
+
+					if (tag[0] === 'd') {
+						const { min, max } = value as DefNumber
+						device.exposure.min = min
+						device.exposure.max = max
+						update = true
+					}
+
+					if (message.state && message.state !== device.exposure.state) {
+						device.exposure.state = message.state
+						update = true
+					}
+
+					if (device.exposure.state === PropertyState.BUSY || device.exposure.state === PropertyState.OK) {
+						device.exposure.time = Math.trunc(value.value * 1000000)
+						update = true
+					}
+
+					if (update) {
+						this.deviceUpdated(device, 'exposure', message.state)
+					}
+				}
+
+				return
+			}
+			case 'CCD_COOLER_POWER': {
+				if (isCamera(device)) {
+					const coolerPower = message.elements.CCD_COOLER_POWER?.value ?? 0
+
+					if (device.coolerPower !== coolerPower) {
+						device.coolerPower = coolerPower
+						this.deviceUpdated(device, 'coolerPower', message.state)
+					}
+				}
+
+				return
+			}
+			case 'CCD_TEMPERATURE': {
+				if (isCamera(device)) {
+					if (tag[0] === 'd') {
+						if (!device.hasCooler) {
+							device.hasCooler = true
+							this.deviceUpdated(device, 'hasCooler', message.state)
+						}
+
+						const canSetTemperature = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+
+						if (device.canSetTemperature !== canSetTemperature) {
+							device.canSetTemperature = canSetTemperature
+							this.deviceUpdated(device, 'canSetTemperature', message.state)
+						}
+
+						if (!device.hasThermometer) {
+							device.hasThermometer = true
+							this.thermometers.set(device.name, device)
+						}
+					}
+
+					const temperatue = message.elements.CCD_TEMPERATURE_VALUE.value
+
+					if (device.temperature !== temperatue) {
+						device.temperature = temperatue
+						this.deviceUpdated(device, 'temperature', message.state)
+					}
+				}
+
+				return
+			}
+			case 'CCD_FRAME': {
+				if (isCamera(device)) {
+					const x = message.elements.X
+					const y = message.elements.Y
+					const width = message.elements.WIDTH
+					const height = message.elements.HEIGHT
+
+					if (tag[0] === 'd') {
+						const canSubFrame = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+
+						if (device.canSubFrame !== canSubFrame) {
+							device.canSubFrame = canSubFrame
+							this.deviceUpdated(device, 'canSubFrame', message.state)
+						}
+
+						device.frame.minX = (x as DefNumber).min
+						device.frame.maxX = (x as DefNumber).max
+						device.frame.minY = (y as DefNumber).min
+						device.frame.maxY = (y as DefNumber).max
+						device.frame.minWidth = (width as DefNumber).min
+						device.frame.maxWidth = (width as DefNumber).max
+						device.frame.minHeight = (height as DefNumber).min
+						device.frame.maxHeight = (height as DefNumber).max
+					}
+
+					device.frame.x = x.value
+					device.frame.y = y.value
+					device.frame.width = width.value
+					device.frame.height = height.value
+
+					this.deviceUpdated(device, 'frame', message.state)
+				}
+
+				return
+			}
+			case 'CCD_BINNING': {
+				if (isCamera(device)) {
+					const binX = message.elements.HOR_BIN
+					const binY = message.elements.VER_BIN
+
+					if (tag[0] === 'd') {
+						const canBin = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+
+						if (device.canBin !== canBin) {
+							device.canBin = canBin
+							this.deviceUpdated(device, 'canBin', message.state)
+						}
+
+						device.bin.maxX = (binX as DefNumber).max
+						device.bin.maxY = (binY as DefNumber).max
+					}
+
+					device.bin.x = binX.value
+					device.bin.y = binY.value
+
+					this.deviceUpdated(device, 'bin', message.state)
+				}
+
+				return
+			}
+			// ZWO ASI, SVBony, etc
+			case 'CCD_CONTROLS': {
+				if (isCamera(device)) {
+					const gain = message.elements.Gain
+
+					if (gain) {
+						this.processGain(device.gain, gain, tag)
+						this.deviceUpdated(device, 'gain', message.state)
+					}
+
+					const offset = message.elements.Offset
+
+					if (offset) {
+						this.processOffset(device.offset, offset, tag)
+						this.deviceUpdated(device, 'offset', message.state)
+					}
+				}
+
+				return
+			}
+			// CCD Simulator
+			case 'CCD_GAIN': {
+				if (isCamera(device)) {
+					const gain = message.elements.GAIN
+
+					if (gain) {
+						this.processGain(device.gain, gain, tag)
+						this.deviceUpdated(device, 'gain', message.state)
+					}
+				}
+
+				return
+			}
+			case 'CCD_OFFSET': {
+				if (isCamera(device)) {
+					const offset = message.elements.OFFSET
+
+					if (offset) {
+						this.processGain(device.offset, offset, tag)
+						this.deviceUpdated(device, 'offset', message.state)
+					}
+				}
+
 				return
 			}
 		}
+	}
+
+	blobVector(client: IndiClient, message: DefBlobVector | SetBlobVector, tag: string) {
+		const device = this.device(message.device)
+
+		if (!device) {
+			this.enqueueMessage(message, tag)
+			return
+		}
+
+		this.addProperty(device, message, tag)
 	}
 
 	device(id: string): Device | undefined {
 		return this.cameras.get(id)
 	}
 
+	deviceProperties(id: string) {
+		return this.properties.get(id)
+	}
+
 	deviceConnect(client: IndiClient, device: Device | string) {
 		device = typeof device === 'string' ? this.device(device)! : device
 
 		if (!device.connected) {
-			client.switch({ device: device.name, name: 'CONNECTION', elements: { CONNECT: true } })
+			client.sendSwitch({ device: device.name, name: 'CONNECTION', elements: { CONNECT: true } })
 		}
 	}
 
@@ -317,7 +562,7 @@ export class IndiService implements IndiClientHandler {
 		device = typeof device === 'string' ? this.device(device)! : device
 
 		if (device.connected) {
-			client.switch({ device: device.name, name: 'CONNECTION', elements: { DISCONNECT: true } })
+			client.sendSwitch({ device: device.name, name: 'CONNECTION', elements: { DISCONNECT: true } })
 		}
 	}
 
@@ -325,7 +570,7 @@ export class IndiService implements IndiClientHandler {
 		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
 
 		if (camera.hasCoolerControl && camera.cooler !== value) {
-			client.switch({ device: camera.name, name: 'CCD_COOLER', elements: { [value ? 'COOLER_ON' : 'COOLER_OFF']: true } })
+			client.sendSwitch({ device: camera.name, name: 'CCD_COOLER', elements: { [value ? 'COOLER_ON' : 'COOLER_OFF']: true } })
 		}
 	}
 
@@ -333,7 +578,7 @@ export class IndiService implements IndiClientHandler {
 		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
 
 		if (camera.canSetTemperature) {
-			client.number({ device: camera.name, name: 'CCD_TEMPERATURE', elements: { CCD_TEMPERATURE_VALUE: value } })
+			client.sendNumber({ device: camera.name, name: 'CCD_TEMPERATURE', elements: { CCD_TEMPERATURE_VALUE: value } })
 		}
 	}
 
@@ -341,7 +586,7 @@ export class IndiService implements IndiClientHandler {
 		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
 
 		if (value && camera.frameFormats.includes(value)) {
-			client.switch({ device: camera.name, name: 'CCD_CAPTURE_FORMAT', elements: { value: true } })
+			client.sendSwitch({ device: camera.name, name: 'CCD_CAPTURE_FORMAT', elements: { value: true } })
 		}
 	}
 
@@ -349,7 +594,7 @@ export class IndiService implements IndiClientHandler {
 		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
 
 		if (camera.canSubFrame) {
-			client.number({ device: camera.name, name: 'CCD_FRAME', elements: { X, Y, WIDTH, HEIGHT } })
+			client.sendNumber({ device: camera.name, name: 'CCD_FRAME', elements: { X, Y, WIDTH, HEIGHT } })
 		}
 	}
 
@@ -357,35 +602,89 @@ export class IndiService implements IndiClientHandler {
 		camera = typeof camera === 'string' ? this.cameras.get(camera)! : camera
 
 		if (camera.canBin) {
-			client.number({ device: camera.name, name: 'CCD_BINNING', elements: { HOR_BIN: x, VER_BIN: y } })
+			client.sendNumber({ device: camera.name, name: 'CCD_BINNING', elements: { HOR_BIN: x, VER_BIN: y } })
 		}
 	}
 
-	private deviceUpdated<D extends Device>(device: D, property: keyof D, state?: PropertyState) {
-		if (this.cameras.has(device.name)) this.handler.cameraUpdated?.(device as unknown as Camera, property as keyof Camera, state)
+	private enqueueMessage(message: DefVector | SetVector, tag: string) {
+		if (!this.rejectedDevices.has(message.device)) {
+			this.enqueuedMessages.push([tag, message])
+		}
+	}
+
+	private addProperty(device: Device, message: DefVector | SetVector, tag: string) {
+		if (!this.properties.has(device.name)) {
+			this.properties.set(device.name, {})
+		}
+
+		if (tag[0] === 'd') {
+			this.properties.get(device.name)![message.name] = message as DefVector
+		} else {
+			// this.properties.get(device.name)![message.name]
+			// TODO: Adicionar, atualizar e remover elementos
+		}
+	}
+
+	private deviceUpdated<D extends Device>(device: D, property: keyof D & string, state?: PropertyState) {
+		if (this.handler.cameraUpdated && this.cameras.has(device.name)) this.handler.cameraUpdated(device as never, property as keyof Camera, state)
+		if (this.handler.thermometerUpdated && this.thermometers.has(device.name) && THERMOMETER_PROPERTIES.includes(property)) this.handler.thermometerUpdated(device as never, property as keyof Thermometer, state)
 		this.handler.deviceUpdated?.(device, property as string, state)
 	}
 
+	private removeCamera(camera: Camera) {
+		this.cameras.delete(camera.name)
+		this.properties.delete(camera.name)
+
+		this.handler.cameraRemoved?.(camera)
+		this.handler.deviceRemoved?.(camera)
+		this.removeThermometer(camera)
+	}
+
+	private removeThermometer(thermometer: Thermometer) {
+		if (this.thermometers.has(thermometer.name)) {
+			this.thermometers.delete(thermometer.name)
+
+			thermometer.hasThermometer = false
+			this.handler.thermometerRemoved?.(thermometer)
+			this.handler.deviceRemoved?.(thermometer)
+		}
+	}
+
+	private processGain(gain: Camera['gain'], element: DefNumber | OneNumber, tag: string) {
+		if (tag[0] === 'd') {
+			gain.min = (element as DefNumber).min
+			gain.max = (element as DefNumber).max
+		}
+
+		gain.value = element.value
+	}
+
+	private processOffset(offset: Camera['offset'], element: DefNumber | OneNumber, tag: string) {
+		if (tag[0] === 'd') {
+			offset.min = (element as DefNumber).min
+			offset.max = (element as DefNumber).max
+		}
+
+		offset.value = element.value
+	}
+
 	private processEnqueuedMessages(client: IndiClient, device: Device) {
-		const switchMessages = this.enqueuedSwitchMessages.values().filter((e) => e[1].device === device.name)
+		for (let i = 0; i < this.enqueuedMessages.length; i++) {
+			const [tag, message] = this.enqueuedMessages[i]
 
-		for (const [name, message] of switchMessages) {
-			this.enqueuedSwitchMessages.delete(message.name)
-			this.switchVector(client, message, name)
-		}
+			if (message.device === device.name) {
+				this.enqueuedMessages.splice(i--, 1)
 
-		const textMessages = this.enqueuedTextMessages.values().filter((e) => e[1].device === device.name)
-
-		for (const [name, message] of textMessages) {
-			this.enqueuedTextMessages.delete(message.name)
-			this.textVector(client, message, name)
-		}
-
-		const numberMessages = this.enqueuedNumberMessages.values().filter((e) => e[1].device === device.name)
-
-		for (const [name, message] of numberMessages) {
-			this.enqueuedTextMessages.delete(message.name)
-			this.numberVector(client, message, name)
+				if (tag.includes('Switch')) {
+					this.switchVector(client, message as never, tag)
+				} else if (tag.includes('Text')) {
+					this.textVector(client, message as never, tag)
+				} else if (tag.includes('Number')) {
+					this.numberVector(client, message as never, tag)
+				} else if (tag.includes('BLOB')) {
+					this.blobVector(client, message as never, tag)
+				}
+			}
 		}
 	}
 }

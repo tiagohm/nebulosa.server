@@ -1,3 +1,4 @@
+import type { WebSocketHandler } from 'bun'
 import { parseArgs } from 'util'
 import fovCameras from './data/cameras.json' with { type: 'json' }
 import hipsSurveys from './data/hips-surveys.json' with { type: 'json' }
@@ -70,8 +71,10 @@ const server = Bun.serve({
 		'/confirmation': { POST: async (req) => Response.json(confirmation.confirm(await req.json())) },
 
 		// INDI
+		'/indi/:id': { GET: (req) => Response.json(indi.device(req.params.id)) },
 		'/indi/:id/connect': { POST: (req) => Response.json(indi.deviceConnect(connection.client!, req.params.id)) },
 		'/indi/:id/disconnect': { POST: (req) => Response.json(indi.deviceDisconnect(connection.client!, req.params.id)) },
+		'/indi/:id/properties': { GET: (req) => Response.json(indi.deviceProperties(req.params.id)) },
 
 		// Atlas
 		'/atlas/sun/image': noResponse, // TODO: Use server.reload(options) to update the image.
@@ -112,30 +115,25 @@ const server = Bun.serve({
 		// Star Detection
 		'/star-detection': { POST: async (req) => Response.json(await detectStars(await req.json())) },
 
+		// WebSocket
+		// @ts-ignore
+		'/ws': (req, server) => {
+			if (!server.upgrade(req)) {
+				return new Response('WebSocket connection required', { status: 400 })
+			}
+		},
+
 		// CORS
 		'/*': { OPTIONS: () => corsResponse },
 	},
 	error: (e) => {
 		return Response.json({ message: e.message }, { status: 500 })
 	},
-	fetch: (req, server) => {
-		const url = new URL(req.url)
-
-		if (url.pathname === '/ws') {
-			if (server.upgrade(req)) {
-				return undefined
-			}
-
-			return new Response('WebSocket Upgrade Error', { status: 500 })
-		}
-
-		return new Response(null, { status: 404 })
-	},
 	websocket: {
 		open: (socket) => webSocketMessageHandler.open(socket),
 		message: (socket, message) => webSocketMessageHandler.message(socket, message),
 		close: (socket, code, reason) => webSocketMessageHandler.close(socket, code, reason),
-	},
+	} as WebSocketHandler,
 })
 
 console.info(`server is started at port: ${server.port}`)
