@@ -1,7 +1,10 @@
+import Elysia from 'elysia'
 import fs from 'fs/promises'
 import { type Fits, readFits } from 'nebulosa/src/fits'
 import { type Image, type ImageChannel, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
 import { fileHandleSource } from 'nebulosa/src/io'
+import fovCameras from '../data/cameras.json' with { type: 'json' }
+import fovTelescopes from '../data/telescopes.json' with { type: 'json' }
 
 export interface ImageStretch {
 	auto: boolean
@@ -92,4 +95,44 @@ export class ImageService {
 	coordinateInterpolation() {}
 
 	statistics() {}
+}
+
+export function image(imageService: ImageService) {
+	const app = new Elysia({ prefix: '/image' })
+
+	// Image
+
+	app.post('/open', ({ body }) => {
+		return imageService.open(body as never)
+	})
+
+	app.post('/close', ({ body }) => {
+		return imageService.close(body as never)
+	})
+
+	app.post('/analyze', () => {
+		return imageService.analyze()
+	})
+
+	app.post('/annotate', () => {
+		return imageService.annotate()
+	})
+
+	app.post('/coordinate-interpolation', () => {
+		return imageService.coordinateInterpolation()
+	})
+
+	app.post('/statistics', () => {
+		return imageService.statistics()
+	})
+
+	app.get('/fov-cameras', () => {
+		return fovCameras
+	})
+
+	app.get('/fov-telescopes', () => {
+		return fovTelescopes
+	})
+
+	return app
 }

@@ -1,24 +1,28 @@
-import type { ServerWebSocket, WebSocketHandler } from 'bun'
+import type { WebSocketHandler } from 'bun'
 
 export interface WebSocketMessage {
 	type: string
 }
 
-export class WebSocketMessageHandler implements WebSocketHandler {
-	private readonly sockets = new Set<ServerWebSocket<unknown>>()
+export interface WebSocket {
+	sendText: (data: string) => void
+}
 
-	open(socket: ServerWebSocket<unknown>) {
+export class WebSocketMessageHandler implements WebSocketHandler {
+	private readonly sockets = new Set<WebSocket>()
+
+	open(socket: WebSocket) {
 		if (!this.sockets.has(socket)) {
 			this.sockets.add(socket)
-			console.info('WebSocket connected: ', socket.remoteAddress)
+			console.info('WebSocket connected')
 		}
 	}
 
-	message(socket: ServerWebSocket<unknown>, message: string | Buffer) {
+	message(socket: WebSocket, message: string | Buffer) {
 		//
 	}
 
-	close(socket: ServerWebSocket<unknown>, code: number, reason: string) {
+	close(socket: WebSocket, code: number, reason: string) {
 		if (this.sockets.has(socket)) {
 			console.info('WebSocket closed: ', code, reason)
 			this.sockets.delete(socket)

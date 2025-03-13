@@ -1,3 +1,4 @@
+import Elysia from 'elysia'
 import { type Angle, deg, parseAngle } from 'nebulosa/src/angle'
 import { AU_KM, SPEED_OF_LIGHT } from 'nebulosa/src/constants'
 import type { CsvRow } from 'nebulosa/src/csv'
@@ -41,7 +42,7 @@ export class AtlasService {
 	imageOfSun() {}
 
 	positionOfSun(req: PositionOfBody) {
-        return this.computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
+		return this.computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 	}
 
 	altitudeChartOfSun(req: AltitudeChartOfBody) {
@@ -99,7 +100,7 @@ export class AtlasService {
 		const endTime = startTime.add(1, 'day')
 
 		const ephemeris = await observer(code, 'coord', [longitude, latitude, elevation], startTime, endTime, HORIZONS_QUANTITIES)
-        const positions = makeBodyPositionFromEphemeris(ephemeris!)
+		const positions = makeBodyPositionFromEphemeris(ephemeris!)
 		if (!this.positions.has(code)) this.positions.set(code, new Map())
 		const map = this.positions.get(code)!
 		positions.forEach((e) => map.set(e[0], e[1]))
@@ -166,4 +167,48 @@ function timeWithoutSeconds(dateTime: DateTime) {
 	const seconds = dateTime.unix()
 	const remaining = Math.trunc(seconds % 60)
 	return seconds - remaining
+}
+
+// '/sun/image'
+// '/earth/seasons'
+// '/moon/phases'
+// '/twilight'
+// '/minor-planets'
+// '/minor-planets/close-approaches'
+// '/sky-objects'
+// '/sky-objects/types'
+// '/sky-objects/:id/position'
+// '/sky-objects/:id/altitude-chart'
+// '/satellites'
+// '/satellites/:id/position'
+// '/satellites/:id/altitude-chart'
+
+export function atlas(atlasService: AtlasService) {
+	const app = new Elysia({ prefix: '/atlas' })
+
+	app.post('/sun/position', ({ body }) => {
+		return atlasService.positionOfSun(body as never)
+	})
+
+	app.post('/sun/altitude-chart', ({ body }) => {
+		return atlasService.altitudeChartOfSun(body as never)
+	})
+
+	app.post('/moon/position', ({ body }) => {
+		return atlasService.positionOfMoon(body as never)
+	})
+
+	app.post('/moon/altitude-chart', ({ body }) => {
+		return atlasService.altitudeChartOfMoon(body as never)
+	})
+
+	app.post('/planets/:code/position', ({ params, body }) => {
+		return atlasService.positionOfPlanet(params.code, body as never)
+	})
+
+	app.post('/planets/:code/altitude-chart', ({ params, body }) => {
+		return atlasService.altitudeChartOfPlanet(params.code, body as never)
+	})
+
+	return app
 }

@@ -16,7 +16,7 @@ export class NotificationSender {
 	constructor(private readonly webSocketMessageHandler: WebSocketMessageHandler) {}
 
 	send(message: Omit<Notification, 'type'>) {
-        message.severity ||= 'info'
+		message.severity ||= 'info'
 		message.title ||= message.severity.toUpperCase()
 		this.webSocketMessageHandler.send<Notification>({ ...message, type: NOTIFICATION_TYPE })
 	}

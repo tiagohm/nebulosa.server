@@ -1,5 +1,7 @@
+import { Elysia } from 'elysia'
 // biome-ignore format:
 import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
+import type { ConnectionService } from './connection'
 
 export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'SWITCH' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
 
@@ -709,4 +711,30 @@ export function ask(client: IndiClient, device: Device) {
 
 export function isInterfaceType(value: number, type: DeviceInterfaceType) {
 	return (value & type) !== 0
+}
+
+export function indi(indiService: IndiService, connectionService: ConnectionService) {
+	const app = new Elysia({ prefix: '/indi' })
+
+	app.get('/:id', ({ params }) => {
+		return indiService.device(params.id)
+	})
+
+	app.post('/:id/connect', ({ params }) => {
+		const device = indiService.device(params.id)
+		if (!device) return new Response('device not found', { status: 404 })
+		return indiService.deviceConnect(connectionService.client!, device)
+	})
+
+	app.post('/:id/disconnect', ({ params }) => {
+		const device = indiService.device(params.id)
+		if (!device) return new Response('device not found', { status: 404 })
+		return indiService.deviceDisconnect(connectionService.client!, device)
+	})
+
+	app.get('/:id/properties', ({ params }) => {
+		return indiService.deviceProperties(params.id)
+	})
+
+	return app
 }

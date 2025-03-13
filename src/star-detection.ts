@@ -1,3 +1,4 @@
+import Elysia from 'elysia'
 import { astapDetectStars } from 'nebulosa/src/astap'
 
 export interface StarDetection {
@@ -18,4 +19,14 @@ export class StarDetectionService {
 
 		return []
 	}
+}
+
+export function starDetection(starDetectionService: StarDetectionService) {
+	const app = new Elysia({ prefix: '/star-detection' })
+
+	app.post('/', ({ body }) => {
+		return starDetectionService.detectStars(body as never)
+	})
+
+	return app
 }

@@ -1,3 +1,4 @@
+import Elysia from 'elysia'
 import type { WebSocketMessage, WebSocketMessageHandler } from './message'
 
 export const CONFIRMATION_TYPE = 'CONFIRMATION'
@@ -31,4 +32,14 @@ export class ConfirmationService {
 
 		return confirmation.finally(() => this.confirmations.delete(message.key))
 	}
+}
+
+export function confirmation(confirmationService: ConfirmationService) {
+	const app = new Elysia({ prefix: '/confirmation' })
+
+	app.post('/', ({ body }) => {
+		confirmationService.confirm(body as never)
+	})
+
+	return app
 }

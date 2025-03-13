@@ -1,3 +1,4 @@
+import Elysia from 'elysia'
 import { IndiClient } from 'nebulosa/src/indi'
 import type { IndiService } from './indi'
 
@@ -62,4 +63,26 @@ export class ConnectionService {
 	list() {
 		return Array.from(this.clients.keys().map((e) => this.status(e))).filter(Boolean)
 	}
+}
+
+export function connection(connectionService: ConnectionService) {
+	const app = new Elysia({ prefix: '/connections' })
+
+	app.get('/', () => {
+		return connectionService.list()
+	})
+
+	app.post('/', async ({ body }) => {
+		return await connectionService.connect(body as never)
+	})
+
+	app.get('/:id', ({ params }) => {
+		return connectionService.status(params.id)
+	})
+
+	app.delete('/:id', ({ params }) => {
+		connectionService.disconnect(params.id)
+	})
+
+	return app
 }

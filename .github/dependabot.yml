@@ -11,6 +11,10 @@ updates:
     schedule:
       interval: "daily"
     target-branch: "main"
+    groups:
+        elysiajs:
+            patterns:
+                - "@elysiajs/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

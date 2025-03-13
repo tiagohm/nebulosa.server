@@ -7,7 +7,9 @@
 		"format": "biome format --write src/"
 	},
 	"dependencies": {
-		"nebulosa": "github:tiagohm/nebulosa.ts"
+		"@elysiajs/cors": "1.2.0",
+		"@elysiajs/cron": "1.2.0",
+		"elysia": "1.2.25",
 	},
 	"devDependencies": {
 		"@biomejs/biome": "latest",
