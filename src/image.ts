@@ -126,13 +126,8 @@ export function image(imageService: ImageService) {
 		return imageService.statistics()
 	})
 
-	app.get('/fov-cameras', () => {
-		return fovCameras
-	})
-
-	app.get('/fov-telescopes', () => {
-		return fovTelescopes
-	})
+	app.get('/fov-cameras', fovCameras)
+	app.get('/fov-telescopes', fovTelescopes)
 
 	return app
 }

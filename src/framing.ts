@@ -26,9 +26,7 @@ export class FramingService {
 export function framing(framingService: FramingService) {
 	const app = new Elysia({ prefix: '/framing' })
 
-	app.get('/hips-surveys', () => {
-		return hipsSurveys
-	})
+	app.get('/hips-surveys', hipsSurveys)
 
 	return app
 }
