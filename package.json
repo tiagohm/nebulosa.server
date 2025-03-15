@@ -4,7 +4,9 @@
 	"type": "module",
 	"scripts": {
 		"lint": "biome lint --write src/",
-		"format": "biome format --write src/"
+		"format": "biome format --write src/",
+		"dev": "bun --watch run .",
+		"compile": "bun build --compile --minify . --outfile nebulosa.exe"
 	},
 	"dependencies": {
 		"@elysiajs/cors": "1.2.0",

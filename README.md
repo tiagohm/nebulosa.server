@@ -10,7 +10,7 @@ The Nebulosa's server application.
 To install dependencies:
 
 ```bash
-bun install
+bun i
 ```
 
 To run:
@@ -18,3 +18,7 @@ To run:
 ```bash
 bun run main.ts --port 3000
 ```
+
+To run tests:
+
+bun test --timeout 10000

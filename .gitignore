@@ -64,6 +64,5 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# Executable
-*.out
+# Bun
 *.exe
