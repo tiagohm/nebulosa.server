@@ -15,6 +15,10 @@ updates:
         elysiajs:
             patterns:
                 - "@elysiajs/*"
+        react:
+            patterns:
+                - "react*"
+                - "@types/react*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

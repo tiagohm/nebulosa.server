@@ -10,6 +10,7 @@ import { ImageService, image } from './src/image'
 import { IndiService, indi } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { StarDetectionService, starDetection } from './src/star-detection'
+import index from './web/index.html'
 
 const args = parseArgs({
 	args: Bun.argv,
@@ -72,6 +73,10 @@ app.use(
 		},
 	}),
 )
+
+// Web
+
+app.get('/', index)
 
 // Services
 

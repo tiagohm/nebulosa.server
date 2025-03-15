@@ -8,10 +8,21 @@
 	"html.format.wrapAttributes": "force-aligned",
 	"html.format.wrapLineLength": 300,
 	"json.format.keepLines": true,
+	"css.lint.unknownAtRules": "ignore",
+	"scss.lint.unknownAtRules": "ignore",
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
 	},
+	"[css]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[scss]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
 	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[typescriptreact]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[json]": {
