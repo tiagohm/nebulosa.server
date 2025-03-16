@@ -7,7 +7,7 @@ import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
 import { FramingService, framing } from './src/framing'
 import { ImageService, image } from './src/image'
-import { IndiService, cameras, indi } from './src/indi'
+import { IndiService, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { StarDetectionService, starDetection } from './src/star-detection'
 
@@ -79,6 +79,8 @@ app.use(connection(connectionService))
 app.use(confirmation(confirmationService))
 app.use(indi(indiService, connectionService))
 app.use(cameras(indiService))
+app.use(thermometers(indiService))
+app.use(guideOutputs(indiService, connectionService))
 app.use(atlas(atlasService))
 app.use(image(imageService))
 app.use(framing(framingService))

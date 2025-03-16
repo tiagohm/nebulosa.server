@@ -254,6 +254,46 @@
 			]
 		},
 		{
+			"name": "Camera",
+			"item": [
+				{
+					"name": "List Cameras",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cameras",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cameras"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Camera By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/cameras/{{cameraId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"cameras",
+								"{{cameraId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Confirmation",
 			"item": [
 				{
@@ -445,6 +485,74 @@
 			]
 		},
 		{
+			"name": "Guide Output",
+			"item": [
+				{
+					"name": "List Guide Outputs",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/guide-outputs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"guide-outputs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Guide Output By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/guide-outputs/{{cameraId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"guide-outputs",
+								"{{cameraId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Guide To",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"direction\": \"NORTH\",\n    \"duration\": 10000 // 10s\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/guide-outputs/{{cameraId}}/guide",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"guide-outputs",
+								"{{cameraId}}",
+								"guide"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Image",
 			"item": [
 				{
@@ -478,37 +586,6 @@
 							"path": [
 								"image",
 								"fov-telescopes"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Star Detection",
-			"item": [
-				{
-					"name": "Detect Stars",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"type\": \"ASTAP\",\n    \"executable\": \"astap\",\n    \"path\": \"/tmp/apod4.jpg\",\n    \"timeout\": 0,\n    \"minSNR\": 0,\n    \"maxStars\": 0,\n    \"slot\": 0\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{baseUrl}}/star-detection",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"star-detection"
 							]
 						}
 					},
@@ -589,6 +666,77 @@
 								"indi",
 								"{{cameraId}}",
 								"properties"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Star Detection",
+			"item": [
+				{
+					"name": "Detect Stars",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"type\": \"ASTAP\",\n    \"executable\": \"astap\",\n    \"path\": \"/tmp/apod4.jpg\",\n    \"timeout\": 0,\n    \"minSNR\": 0,\n    \"maxStars\": 0,\n    \"slot\": 0\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/star-detection",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"star-detection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Thermometers",
+			"item": [
+				{
+					"name": "List Thermometers",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/thermometers",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"thermometers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Thermometer By Id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/thermometers/{{cameraId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"thermometers",
+								"{{cameraId}}"
 							]
 						}
 					},

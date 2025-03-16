@@ -9,6 +9,8 @@ export type SubDeviceType = 'GUIDE_OUTPUT' | 'THERMOMETER' | 'GPS'
 
 export type CfaPattern = 'RGGB' | 'BGGR' | 'GBRG' | 'GRBG' | 'GRGB' | 'GBGR' | 'RGBG' | 'BGRG'
 
+export type GuideDirection = 'NORTH' | 'SOUTH' | 'WEST' | 'EAST'
+
 export enum DeviceInterfaceType {
 	TELESCOPE = 0x0001, // Telescope interface, must subclass INDI::Telescope.
 	CCD = 0x0002, // CCD interface, must subclass INDI::CCD.
@@ -119,6 +121,11 @@ export interface Camera extends GuideOutput, Thermometer {
 		x: number
 		y: number
 	}
+}
+
+export interface GuideTo {
+	direction: GuideDirection
+	duration: number
 }
 
 export interface IndiDeviceEventHandler {
@@ -886,6 +893,48 @@ export function cameras(indiService: IndiService) {
 
 	app.get('/:id', ({ params }) => {
 		return indiService.camera(decodeURIComponent(params.id))
+	})
+
+	return app
+}
+
+export function thermometers(indiService: IndiService) {
+	const app = new Elysia({ prefix: '/thermometers' })
+
+	app.get('/', () => {
+		return indiService.thermometers()
+	})
+
+	app.get('/:id', ({ params }) => {
+		return indiService.thermometer(decodeURIComponent(params.id))
+	})
+
+	return app
+}
+
+export function guideOutputs(indiService: IndiService, connectionService: ConnectionService) {
+	const app = new Elysia({ prefix: '/guide-outputs' })
+
+	app.get('/', () => {
+		return indiService.guideOutputs()
+	})
+
+	app.get('/:id', ({ params }) => {
+		return indiService.guideOutput(decodeURIComponent(params.id))
+	})
+
+	app.post('/:id/guide', ({ params, body }) => {
+		const { direction, duration } = body as GuideTo
+		const device = indiService.guideOutput(decodeURIComponent(params.id))
+		if (!device) return new Response('Guide Output not found', { status: 404 })
+		const client = connectionService.client()
+
+		if (client) {
+			if (direction === 'NORTH') indiService.guideNorth(client, device, duration)
+			else if (direction === 'SOUTH') indiService.guideSouth(client, device, duration)
+			else if (direction === 'WEST') indiService.guideWest(client, device, duration)
+			else if (direction === 'EAST') indiService.guideEast(client, device, duration)
+		}
 	})
 
 	return app
