@@ -1,6 +1,5 @@
 import Elysia from 'elysia'
-import { IndiClient } from 'nebulosa/src/indi'
-import type { IndiService } from './indi'
+import { IndiClient, type IndiClientHandler } from 'nebulosa/src/indi'
 
 export type ConnectionType = 'INDI' | 'ALPACA'
 
@@ -19,49 +18,48 @@ export interface ConnectionStatus {
 }
 
 export class ConnectionService {
-	private readonly clients = new Map<string, IndiClient>()
-	private clientId = ''
+	private readonly clients: IndiClient[] = []
 
-	constructor(private readonly indi: IndiService) {}
+	constructor(private readonly protocol: IndiClientHandler) {}
 
-	// TODO: Allow multiple clients by passing id
-	get client() {
-		return this.clients.get(this.clientId)
+	client(id?: string): IndiClient | undefined {
+		return this.clients.find((e) => e.id === id) ?? this.clients[0]
 	}
 
 	async connect(req: Connect): Promise<ConnectionStatus | false> {
-		const id = Bun.MD5.hash(`${req.host}:${req.port}:${req.type}`, 'hex')
-
-		if (this.clients.has(id)) return this.status(id)!
-
 		if (req.type === 'INDI') {
-			const client = new IndiClient({ protocol: this.indi })
-			await client.connect(req.host, req.port)
-			this.clients.set(id, client)
-			this.clientId = id
-			return this.status(id)!
+			const client = new IndiClient({ protocol: this.protocol })
+
+			if (await client.connect(req.host, req.port)) {
+				this.clients.push(client)
+				return this.status(client)!
+			}
 		}
 
 		return false
 	}
 
 	disconnect(id: string) {
-		this.clients.get(id)?.close()
-		this.clients.delete(id)
+		const index = this.clients.findIndex((e) => e.id === id)
+
+		if (index >= 0) {
+			this.clients[index].close()
+			this.clients.splice(index, 1)
+		}
 	}
 
-	status(id: string): ConnectionStatus | false {
-		const client = this.clients.get(id)
+	status(id: string | IndiClient): ConnectionStatus | false {
+		const client = typeof id === 'string' ? this.client(id) : id
 
 		if (client instanceof IndiClient) {
-			return { type: 'INDI', id, host: client.host!, port: client.port! }
+			return { type: 'INDI', id: client.id!, host: client.host!, port: client.port! }
 		}
 
 		return false
 	}
 
 	list() {
-		return Array.from(this.clients.keys().map((e) => this.status(e))).filter(Boolean)
+		return this.clients.map((e) => this.status(e)).filter(Boolean)
 	}
 }
 

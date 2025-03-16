@@ -1,9 +1,11 @@
 import { Elysia } from 'elysia'
 // biome-ignore format:
 import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
-import type { ConnectionService } from './connection'
+import type { ConnectionService, ConnectionType } from './connection'
 
-export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'SWITCH' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
+export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
+
+export type SubDeviceType = 'GUIDE_OUTPUT' | 'THERMOMETER' | 'GPS'
 
 export type CfaPattern = 'RGGB' | 'BGGR' | 'GBRG' | 'GRBG' | 'GRGB' | 'GBGR' | 'RGBG' | 'BGRG'
 
@@ -34,12 +36,20 @@ export interface DriverInfo {
 	version: string
 }
 
+export interface ClientInfo {
+	type: ConnectionType
+	id: string
+	host?: string
+	port?: number
+}
+
 export interface Device {
 	type: DeviceType
 	id: string
 	name: string
 	connected: boolean
 	driver: DriverInfo
+	client: ClientInfo
 }
 
 export interface Thermometer extends Device {
@@ -113,14 +123,17 @@ export interface Camera extends GuideOutput, Thermometer {
 
 export interface IndiDeviceEventHandler {
 	readonly deviceUpdated?: (device: Device, property: string, state?: PropertyState) => void
-	readonly deviceAdded?: (device: Device) => void
-	readonly deviceRemoved?: (device: Device) => void
+	readonly deviceAdded?: (device: Device, type: DeviceType | SubDeviceType) => void
+	readonly deviceRemoved?: (device: Device, type: DeviceType | SubDeviceType) => void
 	readonly cameraUpdated?: (camera: Camera, property: keyof Camera, state?: PropertyState) => void
 	readonly cameraAdded?: (camera: Camera) => void
 	readonly cameraRemoved?: (camera: Camera) => void
 	readonly thermometerUpdated?: (thermometer: Thermometer, property: keyof Thermometer, state?: PropertyState) => void
 	readonly thermometerAdded?: (thermometer: Thermometer) => void
 	readonly thermometerRemoved?: (thermometer: Thermometer) => void
+	readonly guideOutputUpdated?: (guideOutput: GuideOutput, property: keyof GuideOutput, state?: PropertyState) => void
+	readonly guideOutputAdded?: (guideOutput: GuideOutput) => void
+	readonly guideOutputRemoved?: (guideOutput: GuideOutput) => void
 }
 
 const EMPTY_CAMERA: Camera = {
@@ -190,21 +203,43 @@ const EMPTY_CAMERA: Camera = {
 		executable: '',
 		version: '',
 	},
+	client: {
+		id: '',
+		type: 'INDI',
+	},
 	hasThermometer: false,
 	temperature: 0,
+}
+
+export function isInterfaceType(value: number, type: DeviceInterfaceType) {
+	return (value & type) !== 0
 }
 
 export function isCamera(device: Device): device is Camera {
 	return device.type === 'CAMERA'
 }
 
+export function isThermometer(device: Device): device is Thermometer {
+	return 'hasThermometer' in device && device.hasThermometer !== undefined
+}
+
+export function isGuideOutput(device: Device): device is GuideOutput {
+	return 'canPulseGuide' in device && device.canPulseGuide !== undefined
+}
+
+export function ask(client: IndiClient, device: Device) {
+	client.getProperties({ device: device.name })
+}
+
 const THERMOMETER_PROPERTIES = ['termometer']
+const GUIDE_OUTPUT_PROPERTIES = ['pulseGuiding']
 
 export class IndiService implements IndiClientHandler {
-	private readonly cameras = new Map<string, Camera>()
-	private readonly thermometers = new Map<string, Camera>()
+	private readonly cameraMap = new Map<string, Camera>()
+	private readonly thermometerMap = new Map<string, Thermometer>()
+	private readonly guideOutputMap = new Map<string, GuideOutput>()
 	private readonly enqueuedMessages: [string, DefVector | SetVector][] = []
-	private readonly properties = new Map<string, Record<string, DefVector>>()
+	private readonly devicePropertyMap = new Map<string, Record<string, DefVector | undefined>>()
 	private readonly rejectedDevices = new Set<string>()
 
 	constructor(private readonly handler: IndiDeviceEventHandler) {}
@@ -226,7 +261,7 @@ export class IndiService implements IndiClientHandler {
 				if (connected !== device.connected) {
 					device.connected = connected
 					this.deviceUpdated(device, 'connected', message.state)
-					// if (connected) ask(client, device)
+					if (connected) ask(client, device)
 				}
 
 				return
@@ -276,24 +311,25 @@ export class IndiService implements IndiClientHandler {
 		switch (message.name) {
 			case 'DRIVER_INFO': {
 				const type = parseInt(message.elements.DRIVER_INTERFACE.value)
-				const executable = message.elements.DRIVER_EXEC.value
-				const version = message.elements.DRIVER_VERSION.value
 
 				let reject = true
 
 				if (isInterfaceType(type, DeviceInterfaceType.CCD)) {
 					reject = false
 
-					if (!this.cameras.has(message.device)) {
-						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version } }
-						this.cameras.set(camera.name, camera)
+					if (!this.cameraMap.has(message.device)) {
+						const executable = message.elements.DRIVER_EXEC.value
+						const version = message.elements.DRIVER_VERSION.value
+						const { host, port, id } = client
+						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version }, client: { id: id!, type: 'INDI', host, port } }
+						this.cameraMap.set(camera.name, camera)
 						this.addProperty(camera, message, tag)
 						this.processEnqueuedMessages(client, camera)
 						this.handler.cameraAdded?.(camera)
-						this.handler.deviceAdded?.(camera)
+						this.handler.deviceAdded?.(camera, 'CAMERA')
 					}
-				} else if (this.cameras.has(message.device)) {
-					const camera = this.cameras.get(message.device)!
+				} else if (this.cameraMap.has(message.device)) {
+					const camera = this.cameraMap.get(message.device)!
 					this.removeCamera(camera)
 				}
 
@@ -410,8 +446,7 @@ export class IndiService implements IndiClientHandler {
 						}
 
 						if (!device.hasThermometer) {
-							device.hasThermometer = true
-							this.thermometers.set(device.name, device)
+							this.addThermometer(device)
 						}
 					}
 
@@ -432,6 +467,8 @@ export class IndiService implements IndiClientHandler {
 					const width = message.elements.WIDTH
 					const height = message.elements.HEIGHT
 
+					let update = false
+
 					if (tag[0] === 'd') {
 						const canSubFrame = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
 
@@ -448,14 +485,21 @@ export class IndiService implements IndiClientHandler {
 						device.frame.maxWidth = (width as DefNumber).max
 						device.frame.minHeight = (height as DefNumber).min
 						device.frame.maxHeight = (height as DefNumber).max
+
+						update = true
 					}
 
-					device.frame.x = x.value
-					device.frame.y = y.value
-					device.frame.width = width.value
-					device.frame.height = height.value
+					if (update || device.frame.x !== x.value || device.frame.y !== y.value || device.frame.width !== width.value || device.frame.height !== height.value) {
+						device.frame.x = x.value
+						device.frame.y = y.value
+						device.frame.width = width.value
+						device.frame.height = height.value
+						update = true
+					}
 
-					this.deviceUpdated(device, 'frame', message.state)
+					if (update) {
+						this.deviceUpdated(device, 'frame', message.state)
+					}
 				}
 
 				return
@@ -510,8 +554,7 @@ export class IndiService implements IndiClientHandler {
 				if (isCamera(device)) {
 					const gain = message.elements.GAIN
 
-					if (gain) {
-						this.processGain(device.gain, gain, tag)
+					if (gain && this.processGain(device.gain, gain, tag)) {
 						this.deviceUpdated(device, 'gain', message.state)
 					}
 				}
@@ -522,34 +565,43 @@ export class IndiService implements IndiClientHandler {
 				if (isCamera(device)) {
 					const offset = message.elements.OFFSET
 
-					if (offset) {
-						this.processGain(device.offset, offset, tag)
+					if (offset && this.processOffset(device.offset, offset, tag)) {
 						this.deviceUpdated(device, 'offset', message.state)
 					}
 				}
 
 				return
 			}
+			case 'TELESCOPE_TIMED_GUIDE_NS':
+			case 'TELESCOPE_TIMED_GUIDE_WE': {
+				if (isGuideOutput(device)) {
+					if (tag[0] === 'd') {
+						if (!device.canPulseGuide) {
+							this.addGuideOutput(device)
+						}
+					} else if (device.canPulseGuide) {
+						const pulseGuiding = message.state === PropertyState.BUSY
+
+						if (pulseGuiding !== device.pulseGuiding) {
+							device.pulseGuiding = pulseGuiding
+							this.deviceUpdated(device, 'pulseGuiding', message.state)
+						}
+					}
+				}
+			}
 		}
 	}
 
 	blobVector(client: IndiClient, message: DefBlobVector | SetBlobVector, tag: string) {
 		const device = this.device(message.device)
-
-		if (!device) {
-			this.enqueueMessage(message, tag)
-			return
-		}
-
-		this.addProperty(device, message, tag)
 	}
 
 	device(id: string): Device | undefined {
-		return this.cameras.get(id)
+		return this.cameraMap.get(id)
 	}
 
 	deviceProperties(id: string) {
-		return this.properties.get(id)
+		return this.devicePropertyMap.get(id)
 	}
 
 	deviceConnect(client: IndiClient, device: Device) {
@@ -564,12 +616,12 @@ export class IndiService implements IndiClientHandler {
 		}
 	}
 
-	cameraDeviceList() {
-		return Array.from(this.cameras.values())
+	cameras() {
+		return Array.from(this.cameraMap.values())
 	}
 
-	cameraDevice(id: string) {
-		return this.cameras.get(id)
+	camera(id: string) {
+		return this.cameraMap.get(id)
 	}
 
 	cameraCooler(client: IndiClient, camera: Camera, value: boolean) {
@@ -603,7 +655,7 @@ export class IndiService implements IndiClientHandler {
 	}
 
 	cameraGain(client: IndiClient, camera: Camera, value: number) {
-		const properties = this.properties.get(camera.name)
+		const properties = this.devicePropertyMap.get(camera.name)
 
 		if (properties?.CCD_CONTROLS?.elements.Gain) {
 			client.sendNumber({ device: camera.name, name: 'CCD_CONTROLS', elements: { Gain: value } })
@@ -613,13 +665,53 @@ export class IndiService implements IndiClientHandler {
 	}
 
 	cameraOffset(client: IndiClient, camera: Camera, value: number) {
-		const properties = this.properties.get(camera.name)
+		const properties = this.devicePropertyMap.get(camera.name)
 
 		if (properties?.CCD_CONTROLS?.elements.Offset) {
 			client.sendNumber({ device: camera.name, name: 'CCD_CONTROLS', elements: { Offset: value } })
 		} else if (properties?.CCD_OFFSET?.elements?.OFFSET) {
 			client.sendNumber({ device: camera.name, name: 'CCD_OFFSET', elements: { OFFSET: value } })
 		}
+	}
+
+	guideNorth(client: IndiClient, guideOutput: GuideOutput, duration: number) {
+		if (guideOutput.canPulseGuide) {
+			client.sendNumber({ device: guideOutput.name, name: 'TELESCOPE_TIMED_GUIDE_NS', elements: { TIMED_GUIDE_N: duration, TIMED_GUIDE_S: 0 } })
+		}
+	}
+
+	guideSouth(client: IndiClient, guideOutput: GuideOutput, duration: number) {
+		if (guideOutput.canPulseGuide) {
+			client.sendNumber({ device: guideOutput.name, name: 'TELESCOPE_TIMED_GUIDE_NS', elements: { TIMED_GUIDE_S: duration, TIMED_GUIDE_N: 0 } })
+		}
+	}
+
+	guideWest(client: IndiClient, guideOutput: GuideOutput, duration: number) {
+		if (guideOutput.canPulseGuide) {
+			client.sendNumber({ device: guideOutput.name, name: 'TELESCOPE_TIMED_GUIDE_WE', elements: { TIMED_GUIDE_W: duration, TIMED_GUIDE_E: 0 } })
+		}
+	}
+
+	guideEast(client: IndiClient, guideOutput: GuideOutput, duration: number) {
+		if (guideOutput.canPulseGuide) {
+			client.sendNumber({ device: guideOutput.name, name: 'TELESCOPE_TIMED_GUIDE_WE', elements: { TIMED_GUIDE_E: duration, TIMED_GUIDE_W: 0 } })
+		}
+	}
+
+	thermometers() {
+		return Array.from(this.thermometerMap.values())
+	}
+
+	thermometer(id: string) {
+		return this.thermometerMap.get(id)
+	}
+
+	guideOutputs() {
+		return Array.from(this.guideOutputMap.values())
+	}
+
+	guideOutput(id: string) {
+		return this.guideOutputMap.get(id)
 	}
 
 	private enqueueMessage(message: DefVector | SetVector, tag: string) {
@@ -629,59 +721,111 @@ export class IndiService implements IndiClientHandler {
 	}
 
 	private addProperty(device: Device, message: DefVector | SetVector, tag: string) {
-		if (!this.properties.has(device.name)) {
-			this.properties.set(device.name, {})
+		if (!this.devicePropertyMap.has(device.name)) {
+			this.devicePropertyMap.set(device.name, {})
 		}
 
 		if (tag[0] === 'd') {
-			this.properties.get(device.name)![message.name] = message as DefVector
+			this.devicePropertyMap.get(device.name)![message.name] = message as DefVector
 		} else {
-			// this.properties.get(device.name)![message.name]
-			// TODO: Adicionar, atualizar e remover elementos
+			const properties = this.devicePropertyMap.get(device.name)![message.name]
+
+			if (properties) {
+				if (message.state) properties.state = message.state
+
+				for (const key in message.elements) {
+					if (key in properties.elements) {
+						properties.elements[key].value = message.elements[key].value
+					}
+				}
+			}
 		}
 	}
 
 	private deviceUpdated<D extends Device>(device: D, property: keyof D & string, state?: PropertyState) {
-		if (this.handler.cameraUpdated && this.cameras.has(device.name)) this.handler.cameraUpdated(device as never, property as keyof Camera, state)
-		if (this.handler.thermometerUpdated && this.thermometers.has(device.name) && THERMOMETER_PROPERTIES.includes(property)) this.handler.thermometerUpdated(device as never, property as keyof Thermometer, state)
+		if (this.handler.cameraUpdated && this.cameraMap.has(device.name)) this.handler.cameraUpdated(device as never, property as never, state)
+		if (this.handler.thermometerUpdated && this.thermometerMap.has(device.name) && THERMOMETER_PROPERTIES.includes(property)) this.handler.thermometerUpdated(device as never, property as never, state)
+		if (this.handler.guideOutputUpdated && this.guideOutputMap.has(device.name) && GUIDE_OUTPUT_PROPERTIES.includes(property)) this.handler.guideOutputUpdated(device as never, property as never, state)
 		this.handler.deviceUpdated?.(device, property as string, state)
 	}
 
 	private removeCamera(camera: Camera) {
-		this.cameras.delete(camera.name)
-		this.properties.delete(camera.name)
+		this.cameraMap.delete(camera.name)
+		this.devicePropertyMap.delete(camera.name)
 
 		this.handler.cameraRemoved?.(camera)
-		this.handler.deviceRemoved?.(camera)
+		this.handler.deviceRemoved?.(camera, 'CAMERA')
+
 		this.removeThermometer(camera)
+		this.removeGuideOutput(camera)
+	}
+
+	private addThermometer(thermometer: Thermometer) {
+		thermometer.hasThermometer = true
+		this.thermometerMap.set(thermometer.name, thermometer)
+		this.handler.thermometerAdded?.(thermometer)
+		this.handler.deviceAdded?.(thermometer, 'THERMOMETER')
 	}
 
 	private removeThermometer(thermometer: Thermometer) {
-		if (this.thermometers.has(thermometer.name)) {
-			this.thermometers.delete(thermometer.name)
+		if (this.thermometerMap.has(thermometer.name)) {
+			this.thermometerMap.delete(thermometer.name)
 
 			thermometer.hasThermometer = false
 			this.handler.thermometerRemoved?.(thermometer)
-			this.handler.deviceRemoved?.(thermometer)
+			this.handler.deviceRemoved?.(thermometer, 'THERMOMETER')
+		}
+	}
+
+	private addGuideOutput(guideOutput: GuideOutput) {
+		guideOutput.canPulseGuide = true
+		this.guideOutputMap.set(guideOutput.name, guideOutput)
+		this.handler.guideOutputAdded?.(guideOutput)
+		this.handler.deviceAdded?.(guideOutput, 'GUIDE_OUTPUT')
+	}
+
+	private removeGuideOutput(guideOutput: GuideOutput) {
+		if (this.guideOutputMap.has(guideOutput.name)) {
+			this.guideOutputMap.delete(guideOutput.name)
+
+			guideOutput.canPulseGuide = false
+			this.handler.guideOutputRemoved?.(guideOutput)
+			this.handler.deviceRemoved?.(guideOutput, 'GUIDE_OUTPUT')
 		}
 	}
 
 	private processGain(gain: Camera['gain'], element: DefNumber | OneNumber, tag: string) {
+		let update = false
+
 		if (tag[0] === 'd') {
 			gain.min = (element as DefNumber).min
 			gain.max = (element as DefNumber).max
+			update = true
 		}
 
-		gain.value = element.value
+		if (update || gain.value !== element.value) {
+			gain.value = element.value
+			update = true
+		}
+
+		return update
 	}
 
 	private processOffset(offset: Camera['offset'], element: DefNumber | OneNumber, tag: string) {
+		let update = false
+
 		if (tag[0] === 'd') {
 			offset.min = (element as DefNumber).min
 			offset.max = (element as DefNumber).max
+			update = true
 		}
 
-		offset.value = element.value
+		if (update || offset.value !== element.value) {
+			offset.value = element.value
+			update = true
+		}
+
+		return update
 	}
 
 	private processEnqueuedMessages(client: IndiClient, device: Device) {
@@ -705,35 +849,43 @@ export class IndiService implements IndiClientHandler {
 	}
 }
 
-export function ask(client: IndiClient, device: Device) {
-	client.getProperties({ device: device.name })
-}
-
-export function isInterfaceType(value: number, type: DeviceInterfaceType) {
-	return (value & type) !== 0
-}
-
 export function indi(indiService: IndiService, connectionService: ConnectionService) {
 	const app = new Elysia({ prefix: '/indi' })
 
 	app.get('/:id', ({ params }) => {
-		return indiService.device(params.id)
+		return indiService.device(decodeURIComponent(params.id))
 	})
 
 	app.post('/:id/connect', ({ params }) => {
-		const device = indiService.device(params.id)
-		if (!device) return new Response('device not found', { status: 404 })
-		return indiService.deviceConnect(connectionService.client!, device)
+		const device = indiService.device(decodeURIComponent(params.id))
+		if (!device) return new Response('Device not found', { status: 404 })
+		const client = connectionService.client()
+		client && indiService.deviceConnect(client, device)
 	})
 
 	app.post('/:id/disconnect', ({ params }) => {
-		const device = indiService.device(params.id)
-		if (!device) return new Response('device not found', { status: 404 })
-		return indiService.deviceDisconnect(connectionService.client!, device)
+		const device = indiService.device(decodeURIComponent(params.id))
+		if (!device) return new Response('Device not found', { status: 404 })
+		const client = connectionService.client()
+		client && indiService.deviceDisconnect(client, device)
 	})
 
 	app.get('/:id/properties', ({ params }) => {
-		return indiService.deviceProperties(params.id)
+		return indiService.deviceProperties(decodeURIComponent(params.id))
+	})
+
+	return app
+}
+
+export function cameras(indiService: IndiService) {
+	const app = new Elysia({ prefix: '/cameras' })
+
+	app.get('/', () => {
+		return indiService.cameras()
+	})
+
+	app.get('/:id', ({ params }) => {
+		return indiService.camera(decodeURIComponent(params.id))
 	})
 
 	return app
