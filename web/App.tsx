@@ -1,15 +1,19 @@
-import { API } from './API'
+import { MantineProvider, Stack, createTheme } from '@mantine/core'
+import { IconPlugConnected } from '@tabler/icons-react'
+import { Toolbar, type ToolbarButtonProps } from './components/Toolbar'
 import './index.css'
 
+const theme = createTheme({})
+
 export function App() {
+	const buttons: ToolbarButtonProps[] = [{ icon: IconPlugConnected, label: 'Connect' }]
+
 	return (
-		<div className='max-w-7xl mx-auto p-8 text-center relative z-10'>
-			<h1 className='text-5xl font-bold my-4 leading-tight'>Bun + React</h1>
-			<p>
-				Edit <code className='bg-[#1a1a1a] px-2 py-1 rounded font-mono'>src/App.tsx</code> and save to test HMR
-			</p>
-			<API />
-		</div>
+		<MantineProvider theme={theme} defaultColorScheme='dark'>
+			<Stack>
+				<Toolbar buttons={buttons} />
+			</Stack>
+		</MantineProvider>
 	)
 }
 

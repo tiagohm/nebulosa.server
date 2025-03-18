@@ -19,6 +19,9 @@ updates:
             patterns:
                 - "react*"
                 - "@types/react*"
+        mantine:
+            patterns:
+                - "@mantine/*"
 
   - package-ecosystem: "github-actions"
     directory: "/"

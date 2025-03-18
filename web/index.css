@@ -1,8 +1,15 @@
 @import "tailwindcss";
+@import "@mantine/core/styles.css";
+@import "@mantine/dates/styles.css";
+@import "@mantine/notifications/styles.css";
 
 @layer base {
 	:root {
 		@apply text-[rgba(255,255,255,0.87)] bg-[#242424] font-sans;
+	}
+
+	#root {
+		@apply w-screen h-screen p-1;
 	}
 
 	body {
