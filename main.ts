@@ -7,7 +7,7 @@ import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
 import { FramingService, framing } from './src/framing'
 import { ImageService, image } from './src/image'
-import { IndiService, indi } from './src/indi'
+import { IndiService, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { StarDetectionService, starDetection } from './src/star-detection'
 import index from './web/index.html'
@@ -32,11 +32,11 @@ const webSocketMessageHandler = new WebSocketMessageHandler()
 const indiService = new IndiService({
 	// TODO: Handle close event to remove clients
 	deviceUpdated: (device, property) => {
-		console.log('updated:', property, (device as never)[property])
+		console.log('updated:', property, JSON.stringify((device as never)[property]))
 		webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
 	},
-	deviceAdded: (device) => {
-		console.log('added:', device.name)
+	deviceAdded: (device, type) => {
+		console.log('added:', type, device.name)
 		webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
 	},
 	deviceRemoved: (device) => {
@@ -83,6 +83,9 @@ app.get('/', index)
 app.use(connection(connectionService))
 app.use(confirmation(confirmationService))
 app.use(indi(indiService, connectionService))
+app.use(cameras(indiService))
+app.use(thermometers(indiService))
+app.use(guideOutputs(indiService, connectionService))
 app.use(atlas(atlasService))
 app.use(image(imageService))
 app.use(framing(framingService))
