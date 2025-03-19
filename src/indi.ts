@@ -123,7 +123,7 @@ export interface Camera extends GuideOutput, Thermometer {
 	}
 }
 
-export interface GuideTo {
+export interface GuidePulse {
 	direction: GuideDirection
 	duration: number
 }
@@ -923,8 +923,8 @@ export function guideOutputs(indiService: IndiService, connectionService: Connec
 		return indiService.guideOutput(decodeURIComponent(params.id))
 	})
 
-	app.post('/:id/guide', ({ params, body }) => {
-		const { direction, duration } = body as GuideTo
+	app.post('/:id/pulse', ({ params, body }) => {
+		const { direction, duration } = body as GuidePulse
 		const device = indiService.guideOutput(decodeURIComponent(params.id))
 		if (!device) return new Response('Guide Output not found', { status: 404 })
 		const client = connectionService.client()

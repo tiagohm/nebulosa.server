@@ -47,7 +47,8 @@
 				"useThrowOnlyError": "error"
 			},
 			"correctness": {
-				"noPrecisionLoss": "off"
+				"noPrecisionLoss": "off",
+				"useExhaustiveDependencies": "off"
 			},
 			"suspicious": {
 				"noAssignInExpressions": "off",

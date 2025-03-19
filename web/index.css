@@ -6,6 +6,8 @@
 @layer base {
 	:root {
 		@apply text-[rgba(255,255,255,0.87)] bg-[#242424] font-sans;
+
+		--mb-shadow: none;
 	}
 
 	#root {
@@ -14,5 +16,13 @@
 
 	body {
 		@apply grid place-items-center min-w-[320px] min-h-screen relative m-0;
+	}
+
+	.mantine-Modal-inner {
+		left: 0;
+	}
+
+	.mantine-Select-option[data-combobox-active] {
+		background-color: var(--mantine-color-dark-5) !important;
 	}
 }

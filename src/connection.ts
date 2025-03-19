@@ -9,11 +9,8 @@ export interface Connect {
 	type: ConnectionType
 }
 
-export interface ConnectionStatus {
+export interface ConnectionStatus extends Connect {
 	id: string
-	type: ConnectionType
-	host: string
-	port: number
 	ip?: string
 }
 
@@ -52,7 +49,7 @@ export class ConnectionService {
 		const client = typeof id === 'string' ? this.client(id) : id
 
 		if (client instanceof IndiClient) {
-			return { type: 'INDI', id: client.id!, host: client.host!, port: client.port! }
+			return { type: 'INDI', id: client.id!, ip: client.ip!, host: client.host!, port: client.port! }
 		}
 
 		return false
