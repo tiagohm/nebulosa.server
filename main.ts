@@ -1,13 +1,14 @@
 import { cors } from '@elysiajs/cors'
 import { cron } from '@elysiajs/cron'
 import Elysia from 'elysia'
+import type { PropertyState } from 'nebulosa/src/indi'
 import { parseArgs } from 'util'
 import { AtlasService, atlas } from './src/atlas'
 import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
 import { FramingService, framing } from './src/framing'
 import { ImageService, image } from './src/image'
-import { IndiService, cameras, guideOutputs, indi, thermometers } from './src/indi'
+import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { StarDetectionService, starDetection } from './src/star-detection'
 
@@ -24,27 +25,42 @@ const args = parseArgs({
 const hostname = args.values.host || '0.0.0.0'
 const port = parseInt(args.values.port || '7000')
 
+class IndiDeviceEventHandlers implements IndiDeviceEventHandler {
+	private readonly handlers: IndiDeviceEventHandler[] = []
+
+	constructor(private readonly webSocketMessageHandler: WebSocketMessageHandler) {}
+
+	// TODO: Handle close event to remove clients
+
+	addHandler(handler: IndiDeviceEventHandler) {
+		this.handlers.push(handler)
+	}
+
+	deviceUpdated(device: Device, property: string, state?: PropertyState) {
+		console.debug('updated:', property, JSON.stringify((device as never)[property]))
+		this.webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
+		this.handlers.forEach((e) => e.deviceUpdated?.(device, property, state))
+	}
+
+	deviceAdded(device: Device, type: DeviceType | SubDeviceType) {
+		console.debug('added:', type, device.name)
+		this.webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
+		this.handlers.forEach((e) => e.deviceAdded?.(device, type))
+	}
+
+	deviceRemoved(device: Device, type: DeviceType | SubDeviceType) {
+		console.debug('removed:', type, device.name)
+		this.webSocketMessageHandler.send({ type: 'CAMERA.REMOVED', device })
+		this.handlers.forEach((e) => e.deviceRemoved?.(device, type))
+	}
+}
+
 // Services
 
 const webSocketMessageHandler = new WebSocketMessageHandler()
-
-const indiService = new IndiService({
-	// TODO: Handle close event to remove clients
-	deviceUpdated: (device, property) => {
-		console.log('updated:', property, JSON.stringify((device as never)[property]))
-		webSocketMessageHandler.send({ type: 'CAMERA.UPDATED', device })
-	},
-	deviceAdded: (device, type) => {
-		console.log('added:', type, device.name)
-		webSocketMessageHandler.send({ type: 'CAMERA.ADDED', device })
-	},
-	deviceRemoved: (device) => {
-		console.log('removed:', device.name)
-		webSocketMessageHandler.send({ type: 'CAMERA.REMOVED', device })
-	},
-})
-
-const connectionService = new ConnectionService(indiService)
+const indiDeviceEventHandlers = new IndiDeviceEventHandlers(webSocketMessageHandler)
+const connectionService = new ConnectionService()
+const indiService = new IndiService(indiDeviceEventHandlers, connectionService)
 const confirmationService = new ConfirmationService(webSocketMessageHandler)
 const atlasService = new AtlasService()
 const imageService = new ImageService()
@@ -66,7 +82,7 @@ app.use(
 app.use(
 	cron({
 		name: 'heartbeat',
-		pattern: '*/10 * * * * *',
+		pattern: '* */15 * * * *',
 		run() {
 			console.log('Heartbeat')
 		},
@@ -75,7 +91,7 @@ app.use(
 
 // Services
 
-app.use(connection(connectionService))
+app.use(connection(connectionService, indiService))
 app.use(confirmation(confirmationService))
 app.use(indi(indiService, connectionService))
 app.use(cameras(indiService))

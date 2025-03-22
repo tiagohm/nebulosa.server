@@ -1,7 +1,7 @@
 import { Elysia } from 'elysia'
 // biome-ignore format:
 import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
-import type { ConnectionService, ConnectionType } from './connection'
+import type { ConnectionService, ConnectionStatus } from './connection'
 
 export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
 
@@ -38,20 +38,13 @@ export interface DriverInfo {
 	version: string
 }
 
-export interface ClientInfo {
-	type: ConnectionType
-	id: string
-	host?: string
-	port?: number
-}
-
 export interface Device {
 	type: DeviceType
 	id: string
 	name: string
 	connected: boolean
 	driver: DriverInfo
-	client: ClientInfo
+	client: ConnectionStatus
 }
 
 export interface Thermometer extends Device {
@@ -123,7 +116,7 @@ export interface Camera extends GuideOutput, Thermometer {
 	}
 }
 
-export interface GuideTo {
+export interface GuidePulse {
 	direction: GuideDirection
 	duration: number
 }
@@ -213,6 +206,8 @@ const EMPTY_CAMERA: Camera = {
 	client: {
 		id: '',
 		type: 'INDI',
+		host: '',
+		port: 0,
 	},
 	hasThermometer: false,
 	temperature: 0,
@@ -249,7 +244,10 @@ export class IndiService implements IndiClientHandler {
 	private readonly devicePropertyMap = new Map<string, Record<string, DefVector | undefined>>()
 	private readonly rejectedDevices = new Set<string>()
 
-	constructor(private readonly handler: IndiDeviceEventHandler) {}
+	constructor(
+		private readonly handler: IndiDeviceEventHandler,
+		private readonly connectionService: ConnectionService,
+	) {}
 
 	switchVector(client: IndiClient, message: DefSwitchVector | SetSwitchVector, tag: string) {
 		const device = this.device(message.device)
@@ -318,6 +316,8 @@ export class IndiService implements IndiClientHandler {
 		switch (message.name) {
 			case 'DRIVER_INFO': {
 				const type = parseInt(message.elements.DRIVER_INTERFACE.value)
+				const executable = message.elements.DRIVER_EXEC.value
+				const version = message.elements.DRIVER_VERSION.value
 
 				let reject = true
 
@@ -325,10 +325,7 @@ export class IndiService implements IndiClientHandler {
 					reject = false
 
 					if (!this.cameraMap.has(message.device)) {
-						const executable = message.elements.DRIVER_EXEC.value
-						const version = message.elements.DRIVER_VERSION.value
-						const { host, port, id } = client
-						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version }, client: { id: id!, type: 'INDI', host, port } }
+						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version }, client: this.connectionService.status(client)! }
 						this.cameraMap.set(camera.name, camera)
 						this.addProperty(camera, message, tag)
 						this.processEnqueuedMessages(client, camera)
@@ -763,8 +760,9 @@ export class IndiService implements IndiClientHandler {
 		this.handler.cameraRemoved?.(camera)
 		this.handler.deviceRemoved?.(camera, 'CAMERA')
 
-		this.removeThermometer(camera)
-		this.removeGuideOutput(camera)
+		// TODO: Call it on deleteProperty
+		// this.removeThermometer(camera)
+		// this.removeGuideOutput(camera)
 	}
 
 	private addThermometer(thermometer: Thermometer) {
@@ -923,8 +921,8 @@ export function guideOutputs(indiService: IndiService, connectionService: Connec
 		return indiService.guideOutput(decodeURIComponent(params.id))
 	})
 
-	app.post('/:id/guide', ({ params, body }) => {
-		const { direction, duration } = body as GuideTo
+	app.post('/:id/pulse', ({ params, body }) => {
+		const { direction, duration } = body as GuidePulse
 		const device = indiService.guideOutput(decodeURIComponent(params.id))
 		if (!device) return new Response('Guide Output not found', { status: 404 })
 		const client = connectionService.client()

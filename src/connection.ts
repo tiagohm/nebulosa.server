@@ -9,61 +9,74 @@ export interface Connect {
 	type: ConnectionType
 }
 
-export interface ConnectionStatus {
+export interface ConnectionStatus extends Connect {
 	id: string
-	type: ConnectionType
-	host: string
-	port: number
 	ip?: string
 }
 
 export class ConnectionService {
-	private readonly clients: IndiClient[] = []
-
-	constructor(private readonly protocol: IndiClientHandler) {}
+	private readonly clients = new Map<string, IndiClient>()
 
 	client(id?: string): IndiClient | undefined {
-		return this.clients.find((e) => e.id === id) ?? this.clients[0]
+		if (!id) return this.clients.values().next().value
+		else return this.clients.get(id)
 	}
 
-	async connect(req: Connect): Promise<ConnectionStatus | false> {
-		if (req.type === 'INDI') {
-			const client = new IndiClient({ protocol: this.protocol })
-
-			if (await client.connect(req.host, req.port)) {
-				this.clients.push(client)
-				return this.status(client)!
+	async connect(req: Connect, indiClientHandler: IndiClientHandler): Promise<ConnectionStatus | undefined> {
+		for (const [, client] of this.clients) {
+			if (client.localPort === req.port && (client.remoteHost === req.host || client.remoteIp === req.host)) {
+				return this.status(client)
 			}
 		}
 
-		return false
+		if (req.type === 'INDI') {
+			const client = new IndiClient({ protocol: indiClientHandler })
+
+			if (await client.connect(req.host, req.port)) {
+				const id = Bun.MD5.hash(`${client.remoteIp}:${client.remotePort}:INDI`, 'hex')
+				this.clients.set(id, client)
+				return this.status(client)
+			}
+		}
+
+		return undefined
 	}
 
 	disconnect(id: string) {
-		const index = this.clients.findIndex((e) => e.id === id)
+		const client = this.clients.get(id)
 
-		if (index >= 0) {
-			this.clients[index].close()
-			this.clients.splice(index, 1)
+		if (client) {
+			client.close()
+			this.clients.delete(id)
 		}
 	}
 
-	status(id: string | IndiClient): ConnectionStatus | false {
-		const client = typeof id === 'string' ? this.client(id) : id
+	status(key: string | IndiClient): ConnectionStatus | undefined {
+		if (typeof key === 'string') {
+			const client = this.clients.get(key)
 
-		if (client instanceof IndiClient) {
-			return { type: 'INDI', id: client.id!, host: client.host!, port: client.port! }
+			if (client) {
+				return { type: 'INDI', id: key, ip: client.remoteIp, host: client.remoteHost!, port: client.remotePort! }
+			}
+		} else {
+			for (const [id, client] of this.clients) {
+				if (client === key) {
+					return { type: 'INDI', id, ip: key.remoteIp, host: key.remoteHost!, port: key.remotePort! }
+				}
+			}
 		}
 
-		return false
+		return undefined
 	}
 
 	list() {
-		return this.clients.map((e) => this.status(e)).filter(Boolean)
+		return Array.from(this.clients.values())
+			.map((e) => this.status(e))
+			.filter(Boolean)
 	}
 }
 
-export function connection(connectionService: ConnectionService) {
+export function connection(connectionService: ConnectionService, indiClientHandler: IndiClientHandler) {
 	const app = new Elysia({ prefix: '/connections' })
 
 	app.get('/', () => {
@@ -71,7 +84,7 @@ export function connection(connectionService: ConnectionService) {
 	})
 
 	app.post('/', async ({ body }) => {
-		return await connectionService.connect(body as never)
+		return await connectionService.connect(body as never, indiClientHandler)
 	})
 
 	app.get('/:id', ({ params }) => {

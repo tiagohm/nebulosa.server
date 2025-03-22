@@ -21,4 +21,6 @@ bun run main.ts --port 3000
 
 To run tests:
 
+```bash
 bun test --timeout 10000
+```
