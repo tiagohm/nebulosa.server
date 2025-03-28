@@ -19,6 +19,12 @@ To run:
 bun run main.ts --port 3000
 ```
 
+To run in development mode:
+
+```bash
+bun dev
+```
+
 To run tests:
 
 ```bash

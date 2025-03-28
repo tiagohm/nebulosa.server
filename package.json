@@ -2,12 +2,22 @@
 	"name": "nebulosa-server",
 	"module": "main.ts",
 	"type": "module",
+	"private": true,
 	"scripts": {
 		"lint": "biome lint --write src/",
 		"format": "biome format --write src/",
-		"dev": "bun --watch run .",
-		"compile": "bun build --compile --minify . --outfile nebulosa.exe"
+		"web": "vite",
+		"serve": "bun --watch run .",
+		"dev": "run-p web serve",
+		"compile": "vite build && bun build --compile --minify . --outfile nebulosa.exe"
 	},
+	"keywords": ["astronomy", "indi"],
+	"homepage": "https://tiagohm.github.io/nebulosa",
+	"author": {
+		"name": "Tiago Melo",
+		"email": "tiago.henrique.cco@gmail.com"
+	},
+	"license": "MIT",
 	"dependencies": {
 		"@elysiajs/cors": "1.2.0",
 		"@elysiajs/cron": "1.2.0",
@@ -16,8 +26,25 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "latest",
+		"@mdi/font": "7.4.47",
+		"@primeuix/themes": "1.0.0",
+		"@primevue/auto-import-resolver": "4.3.3",
+		"@tailwindcss/vite": "4.0.17",
+		"@tsconfig/node22": "latest",
 		"@types/bun": "latest",
-		"@types/node": "latest"
+		"@types/node": "latest",
+		"@vitejs/plugin-vue": "5.2.3",
+		"@vue/tsconfig": "0.7.0",
+		"@vueuse/core": "13.0.0",
+		"npm-run-all2": "7.0.2",
+		"pinia": "3.0.1",
+		"primevue": "4.3.3",
+		"tailwindcss": "4.0.17",
+		"tailwindcss-primeui": "0.6.1",
+		"typescript": "5.8.2",
+		"unplugin-vue-components": "28.4.1",
+		"vite": "6.2.3",
+		"vue": "3.5.13"
 	},
-	"trustedDependencies": ["@biomejs/biome"]
+	"trustedDependencies": ["@biomejs/biome", "sharp"]
 }

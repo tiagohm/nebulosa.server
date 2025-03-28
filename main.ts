@@ -82,14 +82,14 @@ app.use(
 app.use(
 	cron({
 		name: 'heartbeat',
-		pattern: '* */15 * * * *',
+		pattern: '0 */15 * * * *',
 		run() {
 			console.log('Heartbeat')
 		},
 	}),
 )
 
-// Services
+// Endpoints
 
 app.use(connection(connectionService, indiService))
 app.use(confirmation(confirmationService))

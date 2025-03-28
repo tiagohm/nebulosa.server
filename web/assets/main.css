@@ -1,0 +1,43 @@
+@import "tailwindcss";
+@import "tailwindcss-primeui";
+@import "@mdi/font/css/materialdesignicons.css";
+
+@custom-variant dark (&:where(.dark-mode, .dark-mode *));
+
+html {
+    @apply m-0 p-0 h-screen overflow-hidden;
+    background: #121212;
+    font-size: 14px;
+}
+
+body, #app {
+    @apply h-full w-full;
+}
+
+input.p-inputtext {
+    @apply max-w-full;
+}
+
+.p-component.p-select-overlay {
+    @apply mt-1.5;
+}
+
+.p-component.p-toast {
+    @apply max-w-[90vw];
+}
+
+.p-component.p-button.p-button-text.p-button-rounded {
+    @apply aspect-square;
+}
+
+.draggable-region {
+	-webkit-app-region: drag;
+}
+
+.no-draggable-region {
+	-webkit-app-region: no-drag;
+}
+
+.pixelated {
+	image-rendering: pixelated;
+}

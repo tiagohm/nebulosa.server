@@ -1,68 +1,17 @@
-# Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
+node_modules
+package-lock.json
+bun.lock
+bun.lockb
+/dist
 
-# Logs
-
-npm-debug.log_
-
-# Caches
-
-.cache
-
-# Diagnostic reports (https://nodejs.org/api/report.html)
-
-report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
-
-# Runtime data
-
-pids
-_.pid
-_.seed
-*.pid.lock
-
-# Compiled binary addons (https://nodejs.org/api/addons.html)
-
-build/Release
-
-# Dependency directories
-
-node_modules/
-jspm_packages/
-
-# TypeScript cache
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
 
 *.tsbuildinfo
 
-# Optional npm cache directory
+components.d.ts
 
-.npm
+.cache
 
-# Optional eslint cache
-
-.eslintcache
-
-# Output of 'npm pack'
-
-*.tgz
-
-# dotenv environment variable files
-
-.env
-
-# IntelliJ based IDEs
-.idea
-
-# Finder (MacOS) folder config
-.DS_Store
-
-# Bun
-bun.lockb
-bun.lock
-
-### Python ###
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
-# Bun
 *.exe
