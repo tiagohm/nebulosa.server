@@ -1,5 +1,6 @@
 import { cors } from '@elysiajs/cors'
 import { cron } from '@elysiajs/cron'
+import { staticPlugin } from '@elysiajs/static'
 import Elysia from 'elysia'
 import type { PropertyState } from 'nebulosa/src/indi'
 import { parseArgs } from 'util'
@@ -88,6 +89,10 @@ app.use(
 		},
 	}),
 )
+
+// Vue
+
+app.use(staticPlugin({ assets: 'app', prefix: '/', indexHTML: true }))
 
 // Endpoints
 

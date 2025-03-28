@@ -1,5 +1,10 @@
 {
 	"editor.formatOnSave": true,
+	"editor.quickSuggestions": {
+		"other": "on",
+		"comments": "off",
+		"strings": "on"
+	},
 	"explorer.excludeGitIgnore": true,
 	"typescript.format.semicolons": "remove",
 	"typescript.preferences.quoteStyle": "single",
@@ -7,9 +12,16 @@
 	"html.format.indentInnerHtml": true,
 	"html.format.wrapAttributes": "force-aligned",
 	"html.format.wrapLineLength": 300,
+	"css.lint.unknownAtRules": "ignore",
 	"json.format.keepLines": true,
 	"editor.codeActionsOnSave": {
 		"source.organizeImports": "explicit"
+	},
+	"[javascript]": {
+		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"[javascriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome"
 	},
 	"[typescript]": {
 		"editor.defaultFormatter": "biomejs.biome"
@@ -19,5 +31,11 @@
 	},
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"
+	},
+	"tailwindCSS.classAttributes": ["class"],
+	"tailwindCSS.rootFontSize": 12,
+	"tailwindCSS.includeLanguages": {
+		"vue": "html",
+		"vue-html": "html"
 	}
 }

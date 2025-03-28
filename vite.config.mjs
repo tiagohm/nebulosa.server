@@ -9,16 +9,18 @@ import { defineConfig } from 'vite'
 export default defineConfig({
 	plugins: [vue(), Components({ resolvers: [PrimeVueResolver()] }), tailwindcss()],
 	base: './',
+	publicDir: 'web/public',
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./web', import.meta.url)),
 		},
 	},
 	build: {
-		outDir: 'dist',
+		outDir: 'app',
 		emptyOutDir: true,
-        chunkSizeWarningLimit: 2048,
-        assetsInlineLimit: 0,
+		chunkSizeWarningLimit: 2048,
+		assetsInlineLimit: 0,
+		reportCompressedSize: false,
 		rollupOptions: {
 			output: {
 				entryFileNames: '[name].js',

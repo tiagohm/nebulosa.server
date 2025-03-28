@@ -30,14 +30,6 @@ input.p-inputtext {
     @apply aspect-square;
 }
 
-.draggable-region {
-	-webkit-app-region: drag;
-}
-
-.no-draggable-region {
-	-webkit-app-region: no-drag;
-}
-
 .pixelated {
 	image-rendering: pixelated;
 }

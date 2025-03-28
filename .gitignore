@@ -2,7 +2,7 @@ node_modules
 package-lock.json
 bun.lock
 bun.lockb
-/dist
+/app
 
 .vscode/*
 !.vscode/settings.json
