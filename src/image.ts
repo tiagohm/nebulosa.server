@@ -1,10 +1,16 @@
 import Elysia from 'elysia'
+import { unlinkSync } from 'fs'
 import fs from 'fs/promises'
-import { type Fits, readFits } from 'nebulosa/src/fits'
-import { type Image, type ImageChannel, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
+import type { Angle } from 'nebulosa/src/angle'
+import { type Bitpix, type Fits, type FitsHeader, readFits } from 'nebulosa/src/fits'
+import { type CfaPattern, type Image, type ImageChannel, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
 import { fileHandleSource } from 'nebulosa/src/io'
+import os from 'os'
+import { join } from 'path'
 import fovCameras from '../data/cameras.json' with { type: 'json' }
 import fovTelescopes from '../data/telescopes.json' with { type: 'json' }
+
+export const X_IMAGE_INFO_HEADER = 'X-Image-Info'
 
 export interface ImageStretch {
 	auto: boolean
@@ -49,7 +55,8 @@ export interface ImageTransformation {
 }
 
 export interface OpenImage {
-	path: string
+	id?: string
+	path?: string
 	camera?: string
 	transformation: ImageTransformation
 }
@@ -61,29 +68,92 @@ export interface CloseImage {
 interface CachedImage {
 	fits?: Fits
 	image?: Image
+	paths: Partial<Record<'jpeg' | 'png', string>>
+	info: ImageInfo
+}
+
+interface ImageInfo {
+    id: string
+	path: string
+	width: number
+	height: number
+	mono: boolean
+	bayer?: CfaPattern
+	stretch: Omit<ImageStretch, 'auto' | 'meanBackground'>
+	rightAscension?: Angle
+	declination?: Angle
+	solved: boolean
+	headers: FitsHeader
+	bitpix: Bitpix
 }
 
 export class ImageService {
 	private readonly images = new Map<string, CachedImage>()
 
 	async open(req: OpenImage) {
-		const handle = await fs.open(req.path)
-		const source = fileHandleSource(handle)
-		const fits = await readFits(source)
+		if (req.path) {
+			const handle = await fs.open(req.path)
+			const source = fileHandleSource(handle)
+			const fits = await readFits(source)
 
-		if (fits) {
-			const image = await readImageFromFits(fits)
+			if (fits) {
+				const image = await readImageFromFits(fits)
 
-			if (image) {
-				const id = Bun.randomUUIDv7()
-				await writeImageToFormat(image, '', req.transformation.useJPEG ? 'jpeg' : 'png')
-				this.images.set(id, { fits, image })
+				if (image) {
+					const id = Bun.MD5.hash(req.path, 'hex')
+					const format = req.transformation.useJPEG ? 'jpeg' : 'png'
+					const path = join(os.tmpdir(), `${id}.${format}`)
+					const outputInfo = await writeImageToFormat(image, path, format)
+
+					if (outputInfo) {
+						const info: ImageInfo = {
+							id, path,
+							width: outputInfo.width,
+							height: outputInfo.height,
+							mono: outputInfo.channels === 1,
+							bayer: image.metadata.bayer,
+							stretch: req.transformation.stretch,
+							solved: false,
+							headers: image.header,
+							bitpix: image.metadata.bitpix,
+						}
+
+						this.images.set(id, { fits, image, paths: { [format]: path }, info })
+
+						return info
+					}
+				}
+			}
+		} else if (req.id) {
+			const image = this.images.get(req.id)
+
+			if (image?.image) {
+				const format = req.transformation.useJPEG ? 'jpeg' : 'png'
+				const path = join(os.tmpdir(), `${req.id}.${format}`)
+
+				image.paths[format] = path
+				image.info.path = path
+
+				if (await writeImageToFormat(image.image, path, format)) {
+					return image.info
+				}
 			}
 		}
+
+		return undefined
 	}
 
-	close(q: CloseImage) {
-		this.images.delete(q.id)
+	close(req: CloseImage) {
+		const image = this.images.get(req.id)
+
+		if (image) {
+			for (const format in image.paths) {
+				const path = image.paths[format as never]
+				path && unlinkSync(path)
+			}
+
+			this.images.delete(req.id)
+		}
 	}
 
 	save() {}
@@ -100,10 +170,15 @@ export class ImageService {
 export function image(imageService: ImageService) {
 	const app = new Elysia({ prefix: '/image' })
 
-	// Image
+	app.post('/open', async ({ body, set, error }) => {
+		const info = await imageService.open(body as never)
 
-	app.post('/open', ({ body }) => {
-		return imageService.open(body as never)
+		if (info) {
+			set.headers[X_IMAGE_INFO_HEADER] = JSON.stringify(info)
+			return new Response(Bun.file(info.path))
+		} else {
+			return error(500)
+		}
 	})
 
 	app.post('/close', ({ body }) => {

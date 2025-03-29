@@ -1,4 +1,5 @@
 import { Elysia } from 'elysia'
+import type { CfaPattern } from 'nebulosa/src/image'
 // biome-ignore format:
 import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
 import type { ConnectionService, ConnectionStatus } from './connection'
@@ -6,8 +7,6 @@ import type { ConnectionService, ConnectionStatus } from './connection'
 export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
 
 export type SubDeviceType = 'GUIDE_OUTPUT' | 'THERMOMETER' | 'GPS'
-
-export type CfaPattern = 'RGGB' | 'BGGR' | 'GBRG' | 'GRBG' | 'GRGB' | 'GBGR' | 'RGBG' | 'BGRG'
 
 export type GuideDirection = 'NORTH' | 'SOUTH' | 'WEST' | 'EAST'
 
