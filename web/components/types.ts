@@ -1,4 +1,6 @@
+import type { BadgeProps } from 'primevue/badge'
 import type { ButtonProps } from 'primevue/button'
+import type { ContextMenuRouterBindProps } from 'primevue/contextmenu'
 import type { InputNumberProps } from 'primevue/inputnumber'
 import type { InputTextProps } from 'primevue/inputtext'
 
@@ -25,3 +27,43 @@ export interface TextButtonProps extends /* @vue-ignore */ Omit<ButtonProps, 'ic
 export interface ImageViewerProps {
 	src: string
 }
+
+export interface ExtendedMenuItemCommandEvent {
+	originalEvent: Event
+	item: ExtendedMenuItem
+}
+
+export interface ExtendedMenuItem {
+	separator?: boolean
+	label?: string | ((...args: unknown[]) => string)
+	icon?: string
+	disabled?: boolean | ((...args: unknown[]) => boolean)
+	visible?: boolean | ((...args: unknown[]) => boolean)
+
+	style?: unknown
+	class?: unknown
+	key?: string
+
+	severity?: ButtonProps['severity']
+	data?: unknown
+
+	badge?: string
+	badgeSeverity?: BadgeProps['severity']
+
+	checkable?: boolean
+	checked?: boolean
+
+	selected?: boolean
+
+	items?: ExtendedMenuItem[]
+
+	command?: (event: ExtendedMenuItemCommandEvent) => void
+	check?: (checked: boolean, item: MenuItemProps['item']) => void
+}
+
+export interface MenuItemProps {
+	item: Omit<ExtendedMenuItem, 'separator' | 'data'>
+	props: ContextMenuRouterBindProps
+}
+
+export const SEPARATOR_MENU_ITEM: Readonly<ExtendedMenuItem> = { separator: true }

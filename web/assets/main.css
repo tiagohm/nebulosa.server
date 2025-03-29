@@ -11,7 +11,7 @@ html {
 }
 
 body, #app {
-    @apply h-full w-full;
+    @apply h-full w-full fixed;
 }
 
 input.p-inputtext {
@@ -30,6 +30,22 @@ input.p-inputtext {
     @apply aspect-square;
 }
 
+.p-contextmenu-root-list {
+    @apply max-h-[468px] overflow-y-auto;
+}
+
+.p-contextmenu-root-list::-webkit-scrollbar {
+	display: none;
+}
+
+.p-contextmenu-submenu {
+    @apply bg-[#161616] mt-1.5;
+}
+
 .pixelated {
 	image-rendering: pixelated;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
 }
