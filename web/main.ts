@@ -1,12 +1,13 @@
 import '@/assets/main.css'
 
+import App from '@/App.vue'
+import { AppTheme } from '@/theme'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
+import DialogService from 'primevue/dialogservice'
 import ToastService from 'primevue/toastservice'
 import Tooltip from 'primevue/tooltip'
 import { createApp } from 'vue'
-import App from './App.vue'
-import { AppTheme } from './theme'
 
 const app = createApp(App)
 
@@ -26,6 +27,7 @@ app.use(PrimeVue, {
 })
 
 app.use(ToastService)
+app.use(DialogService)
 app.use(createPinia())
 
 app.directive('tooltip', Tooltip)

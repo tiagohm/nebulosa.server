@@ -1,18 +1,21 @@
 <script setup
         lang="ts">
+        import ConnectionBox from '@/components/ConnectionBox.vue'
         import FloatInputNumber from '@/components/FloatInputNumber.vue'
         import FloatInputText from '@/components/FloatInputText.vue'
         import IconButton from '@/components/IconButton.vue'
         import ImageViewer from '@/components/ImageViewer.vue'
         import TextButton from '@/components/TextButton.vue'
+        import { openFileChooser } from '@/components/dialog'
         import * as api from '@/shared/api'
         import { useConnectionStore } from '@/stores/connection.store'
+        import { useDialog } from 'primevue/usedialog'
         import { onMounted, useTemplateRef } from 'vue'
-        import ConnectionBox from './components/ConnectionBox.vue'
 
         const connection = useConnectionStore()
         const menuPopover = useTemplateRef('menuPopover')
         const imageViewer = useTemplateRef('imageViewer')
+        const dialog = useDialog()
 
         const menuPopoverItems = [
             { title: 'Camera', icon: 'camera.png' },
@@ -58,6 +61,10 @@
             }
         }
 
+        function openImage() {
+            openFileChooser(dialog, { header: 'Open Image' })
+        }
+
         onMounted(() => {
             chooseActiveConnection()
         })
@@ -65,6 +72,7 @@
 
 <template>
     <Toast position="bottom-center" />
+    <DynamicDialog />
 
     <!-- Toolbar -->
 
@@ -79,6 +87,7 @@
                     v-tooltip.bottom="'Menu'" />
 
         <IconButton icon="image-plus"
+                    @click="openImage()"
                     size="large"
                     v-tooltip.bottom="'Open image'" />
 

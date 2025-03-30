@@ -7,6 +7,7 @@ import { parseArgs } from 'util'
 import { AtlasService, atlas } from './src/atlas'
 import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
+import { fileSystem } from './src/file-system'
 import { FramingService, framing } from './src/framing'
 import { ImageService, X_IMAGE_INFO_HEADER, image } from './src/image'
 import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
@@ -106,6 +107,7 @@ app.use(atlas(atlasService))
 app.use(image(imageService))
 app.use(framing(framingService))
 app.use(starDetection(starDetectionService))
+app.use(fileSystem())
 
 // WebSocket
 

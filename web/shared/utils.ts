@@ -8,6 +8,6 @@ const DATE_TIME_FORMATTER = new Intl.DateTimeFormat('ja-JP', {
 	hour12: false,
 })
 
-export function formatDate(date?: Date | number, noDate: string = '') {
+export function formatDateTime(date?: Date | number, noDate: string = '') {
 	return date ? DATE_TIME_FORMATTER.format(date) : noDate
 }

@@ -2,7 +2,7 @@
         lang="ts">
         import ConnectButton from '@/components/ConnectButton.vue'
         import IconButton from '@/components/IconButton.vue'
-        import { formatDate } from '@/shared/utils'
+        import { formatDateTime } from '@/shared/utils'
         import { useConnectionStore } from '@/stores/connection.store'
 
         const connection = useConnectionStore()
@@ -47,7 +47,7 @@
                             <Tag severity="info"
                                  :value="item.option.type"
                                  class="max-w-fit" />
-                            <span class="text-sm"> <i class="mdi mdi-clock" /> {{ formatDate(item.option.connectedAt, 'never') }}</span>
+                            <span class="text-sm"> <i class="mdi mdi-clock" /> {{ formatDateTime(item.option.connectedAt, 'never') }}</span>
                         </span>
                     </div>
                     <div class="flex flex-col justify-center">
