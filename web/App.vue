@@ -6,7 +6,7 @@
         import IconButton from '@/components/IconButton.vue'
         import ImageViewer from '@/components/ImageViewer.vue'
         import TextButton from '@/components/TextButton.vue'
-        import { openFileChooser } from '@/components/dialog'
+        import { openFilePicker } from '@/components/dialog'
         import * as api from '@/shared/api'
         import { useConnectionStore } from '@/stores/connection.store'
         import { useDialog } from 'primevue/usedialog'
@@ -61,8 +61,9 @@
             }
         }
 
-        function openImage() {
-            openFileChooser(dialog, { header: 'Open Image' })
+        async function openImage() {
+            const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { filter: '*.*', multiple: true, mode: 'openDirectory' } })
+            console.info(paths)
         }
 
         onMounted(() => {

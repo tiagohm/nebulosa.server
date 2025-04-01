@@ -9,14 +9,15 @@ import { defineConfig } from 'vite'
 export default defineConfig({
 	plugins: [vue(), Components({ resolvers: [PrimeVueResolver()] }), tailwindcss()],
 	base: './',
-	publicDir: 'web/public',
+	publicDir: 'public',
+	root: 'web',
 	resolve: {
 		alias: {
 			'@': fileURLToPath(new URL('./web', import.meta.url)),
 		},
 	},
 	build: {
-		outDir: 'app',
+		outDir: '../app',
 		emptyOutDir: true,
 		chunkSizeWarningLimit: 2048,
 		assetsInlineLimit: 0,

@@ -24,9 +24,9 @@ export const AppTheme = definePreset(Aura, {
 					0: '#fdfdfd',
 					50: '{zinc.50}',
 					100: '{zinc.100}',
-					200: '{zinc.200}',
-					300: '{zinc.300}',
-					400: '{zinc.400}',
+					200: '#646470',
+					300: '#525256',
+					400: '#424246',
 					500: '#343438',
 					600: '#252529',
 					700: '#222226',
@@ -148,9 +148,9 @@ export const AppTheme = definePreset(Aura, {
 				background: '{surface.800}',
 			},
 			option: {
-				focusBackground: '{surface.500}',
-				selectedBackground: '{surface.600}',
-				selectedFocusBackground: '{surface.600}',
+				focusBackground: '{surface.600}',
+				selectedBackground: '{surface.500}',
+				selectedFocusBackground: '{surface.400}',
 			},
 		},
 		tabs: {
@@ -201,21 +201,26 @@ export const AppTheme = definePreset(Aura, {
 		},
 		toast: {
 			colorScheme: {
-                dark: {
-                    success: {
-                        borderColor: 'transparent',
-                    },
-                    info: {
-                        borderColor: 'transparent',
-                    },
-                    warn: {
-                        borderColor: 'transparent',
-                    },
-                    error: {
-                        borderColor: 'transparent',
-                    },
-                }
-            }
+				dark: {
+					success: {
+						borderColor: 'transparent',
+					},
+					info: {
+						borderColor: 'transparent',
+					},
+					warn: {
+						borderColor: 'transparent',
+					},
+					error: {
+						borderColor: 'transparent',
+					},
+				},
+			},
+		},
+		breadcrumb: {
+			item: {
+				color: '{surface.200}',
+			},
 		},
 	},
 } as Preset<AuraBaseDesignTokens>)

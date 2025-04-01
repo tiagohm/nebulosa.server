@@ -7,14 +7,15 @@ import { basename, dirname, join } from 'path'
 export interface ListDirectory {
 	path?: string
 	filter?: string
+	directoryOnly?: boolean
 }
 
-export interface Directory {
+export interface DirectoryEntry {
 	name: string
 	path: string
 }
 
-export interface FileEntry extends Directory {
+export interface FileEntry extends DirectoryEntry {
 	directory: boolean
 	size: number
 	updatedAt: number
@@ -22,7 +23,7 @@ export interface FileEntry extends Directory {
 
 export interface FileSystem {
 	path: string
-	tree: Directory[]
+	tree: DirectoryEntry[]
 	entries: FileEntry[]
 }
 
@@ -36,15 +37,16 @@ export function fileSystem() {
 		const entries: FileEntry[] = []
 
 		for (const entry of await fs.readdir(path, { withFileTypes: true })) {
-			const name = entry.name
-			const path = join(entry.parentPath, name)
+			const { name, parentPath } = entry
+			const path = join(parentPath, name)
 			const directory = entry.isDirectory()
-			const file = entry.isFile()
 
-			if (directory || file) {
-				if (!glob || directory || glob.match(name)) {
-					const { size, atimeMs: updatedAt } = await fs.stat(path)
-					entries.push({ name, path, directory, size, updatedAt })
+			if (directory || entry.isFile()) {
+				if (!req.directoryOnly || directory) {
+					if (!glob || directory || glob.match(name)) {
+						const { size, atimeMs: updatedAt } = await fs.stat(path)
+						entries.push({ name, path, directory, size, updatedAt })
+					}
 				}
 			}
 		}
@@ -73,7 +75,7 @@ async function findDirectory(path?: string) {
 	}
 }
 
-function makeDirectoryTree(path: string): Directory[] {
+function makeDirectoryTree(path: string): DirectoryEntry[] {
 	const name = basename(path)
 
 	if (!name) return [{ name, path }]

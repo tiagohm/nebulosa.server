@@ -6,23 +6,30 @@ export interface DynamicDialogOpener {
 	open: (content: unknown, options?: DynamicDialogOptions) => DynamicDialogInstance
 }
 
-export interface FileChooserData extends ListDirectory {
-	multiple?: boolean
+// File Chooser
+
+export type FilePickerMode = 'openFile' | 'openDirectory' | 'save'
+
+export interface FilePickerData extends ListDirectory {
+	readonly multiple?: boolean
+	readonly mode?: FilePickerMode
 }
 
-export interface FileChooserOptions {
-	header: string
-	data?: FileChooserData
+export interface FilePickerOptions extends DynamicDialogOptions {
+	readonly data?: FilePickerData
 }
 
-const FileChooser = defineAsyncComponent(() => import('./FileChooser.vue'))
+const FilePicker = defineAsyncComponent(() => import('./FilePicker.vue'))
 
-export function openFileChooser(dialog: DynamicDialogOpener, options?: FileChooserOptions) {
-	dialog.open(FileChooser, {
-		data: options?.data ?? {},
-		props: {
-			header: options?.header || 'File Chooser',
-			modal: true,
-		},
+export function openFilePicker(dialog: DynamicDialogOpener, options?: FilePickerOptions) {
+	return new Promise<string[] | undefined>((resolve) => {
+		dialog.open(FilePicker, {
+			...options,
+			props: { ...options?.props, modal: true },
+			onClose: (result) => {
+				options?.onClose?.(result)
+				resolve(result?.data)
+			},
+		})
 	})
 }
