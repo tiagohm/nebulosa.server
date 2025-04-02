@@ -28,7 +28,7 @@
 	"devDependencies": {
 		"@biomejs/biome": "latest",
 		"@mdi/font": "7.4.47",
-		"@primeuix/themes": "1.0.0",
+		"@primeuix/themes": "1.0.1",
 		"@primevue/auto-import-resolver": "4.3.3",
 		"@tailwindcss/vite": "4.1.0",
 		"@tsconfig/node22": "latest",
