@@ -1,20 +1,28 @@
 <script setup
         lang="ts">
-        import { listDirectory } from '@/shared/api'
+        import { createDirectory, listDirectory } from '@/shared/api'
         import { formatDateTime } from '@/shared/utils'
         import type { DynamicDialogInstance } from 'primevue/dynamicdialogoptions'
         import type { MenuItem } from 'primevue/menuitem'
         import { type Ref, inject, onMounted, ref, toRaw, watch } from 'vue'
         import type { FileEntry, ListDirectory } from '../../src/file-system'
+        import FloatInputText from './FloatInputText.vue'
         import IconButton from './IconButton.vue'
         import TextButton from './TextButton.vue'
         import type { FilePickerData } from './dialog'
 
+        interface NewFolderDialog {
+            showDialog: boolean
+            name: string
+        }
+
         const entries = ref<FileEntry[]>([])
         const selected = ref<FileEntry>()
         const dialog = inject<Ref<DynamicDialogInstance>>('dialogRef')
+        const currentPath = ref('')
         const breadcrumb = ref<MenuItem[]>([])
         const data = ref<FilePickerData>()
+        const newFolder = ref<NewFolderDialog>({ showDialog: false, name: '' })
 
         const result = ref<string[]>([])
 
@@ -23,6 +31,7 @@
             const fileSystem = await listDirectory(req)
 
             if (fileSystem) {
+                currentPath.value = fileSystem.path
                 entries.value = fileSystem.entries
 
                 breadcrumb.value = []
@@ -41,9 +50,22 @@
             }
         }
 
+        async function createFolder() {
+            const path = await createDirectory({ name: newFolder.value.name.trim(), path: currentPath.value })
+
+            if (path) {
+                newFolder.value.showDialog = false
+                refresh()
+            }
+        }
+
         function browseDirectory(entry: FileEntry, event: Event) {
             event.stopImmediatePropagation()
             open(entry.path)
+        }
+
+        function refresh() {
+            return open(data.value!.path!)
         }
 
         watch(selected, (actual, prev) => {
@@ -80,13 +102,23 @@
 
         onMounted(() => {
             data.value = dialog!.value.data ?? {}
-            return open(data.value!.path!)
+            return refresh()
         })
 </script>
 
 <template>
     <div class="flex flex-col gap-2">
-        <Breadcrumb :model="breadcrumb" />
+        <div v-if="breadcrumb.length"
+             class="flex flex-row items-center justify-between gap-2">
+            <Breadcrumb :model="breadcrumb" />
+            <IconButton icon="folder-plus"
+                        v-tooltip.bottom="'New folder'"
+                        @click="newFolder.showDialog = true" />
+            <IconButton icon="refresh"
+                        v-tooltip.bottom="'Refresh'"
+                        severity="info"
+                        @click="refresh()" />
+        </div>
         <Listbox v-model="selected"
                  :options="entries"
                  class="w-full"
@@ -94,7 +126,8 @@
                  data-key="name"
                  filter
                  :filter-fields="['name']"
-                 filter-placeholder="Filter">
+                 filter-placeholder="Filter"
+                 empty-message="Empty directory">
             <template #option="item">
                 <div class="w-full flex flex-row gap-2 items-center justify-between">
                     <div class="flex flex-row items-center gap-2">
@@ -123,5 +156,24 @@
                         :badge="result.length.toFixed(0)"
                         @click="choose()" />
         </div>
+
+        <Dialog modal
+                v-model:visible="newFolder.showDialog"
+                header="New Folder"
+                :style="{ width: '18rem', maxWidth: '95vw' }">
+            <div class="grid grid-cols-12 gap-3 mt-2">
+                <div class="col-span-full">
+                    <FloatInputText label="Name"
+                                    maxlength="32"
+                                    v-model="newFolder.name" />
+                </div>
+                <div class="col-span-full flex justify-end gap-2">
+                    <TextButton label="Create"
+                                icon="check"
+                                :disabled="!newFolder.name.trim()"
+                                @click="createFolder()" />
+                </div>
+            </div>
+        </Dialog>
     </div>
 </template>

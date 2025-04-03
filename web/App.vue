@@ -9,6 +9,7 @@
         import { openFilePicker } from '@/components/dialog'
         import * as api from '@/shared/api'
         import { useConnectionStore } from '@/stores/connection.store'
+        import { useStorage } from '@vueuse/core'
         import { useDialog } from 'primevue/usedialog'
         import { onMounted, useTemplateRef } from 'vue'
 
@@ -61,9 +62,14 @@
             }
         }
 
+        const openImageStorage = useStorage('image.open.path', '')
+
         async function openImage() {
-            const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { filter: '*.*', multiple: true, mode: 'openDirectory' } })
-            console.info(paths)
+            const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { path: openImageStorage.value, filter: '*.*', mode: 'openDirectory' } })
+
+            if (paths?.length) {
+                openImageStorage.value = paths[0]
+            }
         }
 
         onMounted(() => {
@@ -144,10 +150,6 @@
                                   v-model="connection.edited!.port" />
             </div>
             <div class="col-span-full flex justify-end gap-2">
-                <TextButton label="Cancel"
-                            icon="close"
-                            severity="danger"
-                            @click="connection.showDialog = false" />
                 <TextButton label="Save"
                             icon="content-save"
                             :disabled="!connection.edited?.host || !connection.edited?.name"

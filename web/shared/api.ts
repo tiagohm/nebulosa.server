@@ -1,5 +1,5 @@
 import type { Connect, ConnectionStatus } from '../../src/connection'
-import type { FileSystem, ListDirectory } from '../../src/file-system'
+import type { CreateDirectory, FileSystem, ListDirectory } from '../../src/file-system'
 
 // Connection
 
@@ -18,39 +18,48 @@ export function connections() {
 // File System
 
 export function listDirectory(req?: ListDirectory) {
-	return doPost<FileSystem>('file-system', req)
+	return doPost<FileSystem>('file-system/list', req)
+}
+
+export function createDirectory(req: CreateDirectory) {
+	return doPost<{ path: string }>('file-system/create', req)
 }
 
 const DEFAULT_HEADERS = new Headers({ 'Content-Type': 'application/json' })
 
 const DEFAULT_URL = 'http://localhost:7000'
 
-function doFetch(path: string, init?: RequestInit) {
+async function doFetch(path: string, init?: RequestInit) {
 	const url = localStorage.getItem('api.url') || DEFAULT_URL
-	return fetch(`${url}/${path}`, init)
+
+	try {
+		return await fetch(`${url}/${path}`, init)
+	} catch {
+		return undefined
+	}
 }
 
-function makeResponse<T>(text: string) {
+function makeResponse<T>(text?: string) {
 	return text ? (JSON.parse(text) as T) : undefined
 }
 
 async function doGet<T>(path: string) {
 	const response = await doFetch(path, { method: 'GET', redirect: 'follow' })
-	const text = await response.text()
+	const text = await response?.text()
 	return makeResponse<T>(text)
 }
 
 async function doPost<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
 	const response = await doFetch(path, { method: 'POST', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
-	const text = await response.text()
+	const text = await response?.text()
 	return makeResponse<T>(text)
 }
 
 async function doPut<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
 	const response = await doFetch(path, { method: 'PUT', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
-	const text = await response.text()
+	const text = await response?.text()
 	return makeResponse<T>(text)
 }
 

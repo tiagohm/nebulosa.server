@@ -7,7 +7,7 @@ import { parseArgs } from 'util'
 import { AtlasService, atlas } from './src/atlas'
 import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
-import { fileSystem } from './src/file-system'
+import { FileSystemService, fileSystem } from './src/file-system'
 import { FramingService, framing } from './src/framing'
 import { ImageService, X_IMAGE_INFO_HEADER, image } from './src/image'
 import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
@@ -67,6 +67,7 @@ const confirmationService = new ConfirmationService(webSocketMessageHandler)
 const atlasService = new AtlasService()
 const imageService = new ImageService()
 const framingService = new FramingService()
+const fileSystemService = new FileSystemService()
 const starDetectionService = new StarDetectionService()
 
 const app = new Elysia()
@@ -95,6 +96,12 @@ app.use(
 
 app.use(staticPlugin({ assets: 'app', prefix: '/', indexHTML: true }))
 
+// Error Handling
+
+app.onError(({ code, error }) => {
+	return Response.json({ message: `${error}`, code })
+})
+
 // Endpoints
 
 app.use(connection(connectionService, indiService))
@@ -107,7 +114,7 @@ app.use(atlas(atlasService))
 app.use(image(imageService))
 app.use(framing(framingService))
 app.use(starDetection(starDetectionService))
-app.use(fileSystem())
+app.use(fileSystem(fileSystemService))
 
 // WebSocket
 
