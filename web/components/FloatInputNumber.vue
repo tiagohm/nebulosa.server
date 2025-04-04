@@ -17,11 +17,13 @@
             if (disabled || readonly || value === null || value === undefined) return
 
             const increment = step ?? 1
-            const newValue = value + (Math.sign(delta) < 0 ? increment : -increment)
+            const direction = -Math.sign(delta)
+            const newValue = value + increment * direction
 
             if (newValue !== value) {
                 if ((min === undefined || newValue >= min) && (max === undefined || newValue <= max)) {
-                    input.value.$props.modelValue = newValue
+                    // biome-ignore lint/suspicious/noExplicitAny:
+                    (input.value as any).spin(event, direction)
                 }
             }
 
