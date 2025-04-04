@@ -60,11 +60,16 @@ export const useConnectionStore = defineStore('connection', () => {
 
 		if (connections.value.length === 1) {
 			connections.value[0] = structuredClone(DEFAULT_CONNECTION)
+			current.value = connections.value[0]
 		} else {
 			const index = connections.value.indexOf(connection)
 
 			if (index >= 0) {
 				connections.value.splice(index, 1)
+
+				if (connection.id === current.value.id) {
+					current.value = connections.value[0]
+				}
 			}
 		}
 	}
