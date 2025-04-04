@@ -47,6 +47,11 @@
                         },
                     })
                 }
+
+                if (breadcrumb.value.length >= 4) {
+                    breadcrumb.value[breadcrumb.value.length - 2].label = '...'
+                    breadcrumb.value.splice(2, breadcrumb.value.length - 4)
+                }
             }
         }
 
