@@ -1,28 +1,21 @@
 import '@/assets/main.css'
 
-import App from '@/App.vue'
-import { AppTheme } from '@/theme'
+import { ThemeOptions, ThemePreset } from '@/theme'
 import { createPinia } from 'pinia'
 import PrimeVue from 'primevue/config'
 import DialogService from 'primevue/dialogservice'
 import ToastService from 'primevue/toastservice'
 import Tooltip from 'primevue/tooltip'
 import { createApp } from 'vue'
+import Home from './Home.vue'
 
-const app = createApp(App)
+const app = createApp(Home)
 
 app.use(PrimeVue, {
 	ripple: false,
 	theme: {
-		preset: AppTheme,
-		options: {
-			darkModeSelector: '.dark-mode',
-			inputVariant: 'filled',
-			cssLayer: {
-				name: 'primevue',
-				order: 'theme, base, primevue, utilities',
-			},
-		},
+		preset: ThemePreset,
+		options: ThemeOptions,
 	},
 })
 

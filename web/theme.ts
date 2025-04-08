@@ -3,7 +3,16 @@ import Aura from '@primeuix/themes/aura'
 import type { AuraBaseDesignTokens } from '@primeuix/themes/aura/base'
 import type { Preset } from '@primeuix/themes/types'
 
-export const AppTheme = definePreset(Aura, {
+export const ThemeOptions = {
+	darkModeSelector: '.dark-mode',
+	inputVariant: 'filled',
+	cssLayer: {
+		name: 'primevue',
+		order: 'theme, base, primevue, utilities',
+	},
+}
+
+export const ThemePreset = definePreset(Aura, {
 	semantic: {
 		primary: {
 			50: '{indigo.50}',
