@@ -36,7 +36,7 @@
 		"@types/node": "latest",
 		"@vitejs/plugin-vue": "5.2.3",
 		"@vue/tsconfig": "0.7.0",
-		"@vueuse/core": "13.0.0",
+		"@vueuse/core": "13.1.0",
 		"npm-run-all2": "7.0.2",
 		"pinia": "3.0.1",
 		"primevue": "4.3.3",
