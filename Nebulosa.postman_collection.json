@@ -786,6 +786,65 @@
 			]
 		},
 		{
+			"name": "Plate Solver",
+			"item": [
+				{
+					"name": "Start",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1,\n    \"type\": \"ASTAP\",\n    // \"executable\": \"astap\",\n    \"path\": \"/tmp/astrometry.png\",\n    \"downsample\": 0,\n    \"focalLength\": 0,\n    \"pixelSize\": 0,\n    \"apiUrl\": null,\n    \"apiKey\": null,\n    \"timeout\": 300000,\n    \"slot\": 1,\n    \"blind\": false,\n    \"centerRA\": \"17:45:47\",\n    \"centerDEC\": \"-29d07m24.96s\",\n    \"radius\": 4\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plate-solver/start",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plate-solver",
+								"start"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Stop",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"id\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/plate-solver/stop",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"plate-solver",
+								"stop"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "Star Detection",
 			"item": [
 				{

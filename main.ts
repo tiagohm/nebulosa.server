@@ -12,6 +12,7 @@ import { FramingService, framing } from './src/framing'
 import { ImageService, X_IMAGE_INFO_HEADER, image } from './src/image'
 import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
+import { PlateSolverService, plateSolver } from './src/platesolver'
 import { StarDetectionService, starDetection } from './src/star-detection'
 
 const args = parseArgs({
@@ -69,6 +70,7 @@ const imageService = new ImageService()
 const framingService = new FramingService()
 const fileSystemService = new FileSystemService()
 const starDetectionService = new StarDetectionService()
+const plateSolverService = new PlateSolverService()
 
 const app = new Elysia()
 
@@ -114,6 +116,7 @@ app.use(atlas(atlasService))
 app.use(image(imageService))
 app.use(framing(framingService))
 app.use(starDetection(starDetectionService))
+app.use(plateSolver(plateSolverService))
 app.use(fileSystem(fileSystemService))
 
 // WebSocket
