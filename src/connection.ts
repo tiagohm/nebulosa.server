@@ -30,7 +30,7 @@ export class ConnectionService {
 		}
 
 		if (req.type === 'INDI') {
-			const client = new IndiClient({ protocol: indiClientHandler })
+			const client = new IndiClient({ handler: indiClientHandler })
 
 			if (await client.connect(req.host, req.port)) {
 				const id = Bun.MD5.hash(`${client.remoteIp}:${client.remotePort}:INDI`, 'hex')
