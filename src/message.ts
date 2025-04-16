@@ -1,7 +1,7 @@
 import type { WebSocketHandler } from 'bun'
 
 export interface WebSocketMessage {
-	type: string
+	readonly type: string
 }
 
 export interface WebSocket {

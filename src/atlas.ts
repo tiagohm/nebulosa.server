@@ -9,15 +9,15 @@ import { Quantity, observer } from 'nebulosa/src/horizons'
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
 
 export interface PositionOfBody {
-	dateTime: string
-	longitude: number
-	latitude: number
-	elevation: number
+	readonly dateTime: string
+	readonly longitude: number
+	readonly latitude: number
+	readonly elevation: number
 }
 
 export interface AltitudeChartOfBody {
-	dateTime: string
-	stepSize: number
+	readonly dateTime: string
+	readonly stepSize: number
 }
 
 export interface BodyPosition {

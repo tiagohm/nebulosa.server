@@ -4,14 +4,14 @@ import type { WebSocketMessage, WebSocketMessageHandler } from './message'
 export const CONFIRMATION_TYPE = 'CONFIRMATION'
 
 export interface Confirm {
-	key: string
-	accepted: boolean
+	readonly key: string
+	readonly accepted: boolean
 }
 
 export interface Confirmation extends WebSocketMessage {
-	type: 'CONFIRMATION'
-	key: string
-	message: string
+	readonly type: 'CONFIRMATION'
+	readonly key: string
+	readonly message: string
 }
 
 export class ConfirmationService {

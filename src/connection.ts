@@ -4,14 +4,14 @@ import { IndiClient, type IndiClientHandler } from 'nebulosa/src/indi'
 export type ConnectionType = 'INDI' | 'ALPACA'
 
 export interface Connect {
-	host: string
-	port: number
-	type: ConnectionType
+	readonly host: string
+	readonly port: number
+	readonly type: ConnectionType
 }
 
 export interface ConnectionStatus extends Connect {
-	id: string
-	ip?: string
+	readonly id: string
+	readonly ip?: string
 }
 
 export class ConnectionService {

@@ -13,56 +13,56 @@ import fovTelescopes from '../data/telescopes.json' with { type: 'json' }
 export const X_IMAGE_INFO_HEADER = 'X-Image-Info'
 
 export interface ImageStretch {
-	auto: boolean
-	shadow: number // 0 - 65535
-	highlight: number // 0 - 65535
-	midtone: number // 0 - 65535
-	meanBackground: number
+	readonly auto: boolean
+	readonly shadow: number // 0 - 65535
+	readonly highlight: number // 0 - 65535
+	readonly midtone: number // 0 - 65535
+	readonly meanBackground: number
 }
 
 export interface ImageScnr {
-	channel: ImageChannel
-	amount: number
-	method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
+	readonly channel: ImageChannel
+	readonly amount: number
+	readonly method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
 }
 
 export interface ImageAdjustmentLevel {
-	enabled: boolean
-	value: number
+	readonly enabled: boolean
+	readonly value: number
 }
 
 export interface ImageAdjustment {
-	enabled: boolean
-	contrast: ImageAdjustmentLevel
-	brightness: ImageAdjustmentLevel
-	exposure: ImageAdjustmentLevel
-	gamma: ImageAdjustmentLevel
-	saturation: ImageAdjustmentLevel
-	fade: ImageAdjustmentLevel
+	readonly enabled: boolean
+	readonly contrast: ImageAdjustmentLevel
+	readonly brightness: ImageAdjustmentLevel
+	readonly exposure: ImageAdjustmentLevel
+	readonly gamma: ImageAdjustmentLevel
+	readonly saturation: ImageAdjustmentLevel
+	readonly fade: ImageAdjustmentLevel
 }
 
 export interface ImageTransformation {
-	force: boolean
-	calibrationGroup?: string
-	debayer: boolean
-	stretch: ImageStretch
-	mirrorHorizontal: boolean
-	mirrorVertical: boolean
-	invert: boolean
-	scnr: ImageScnr
-	useJPEG: boolean
-	adjustment: ImageAdjustment
+	readonly force: boolean
+	readonly calibrationGroup?: string
+	readonly debayer: boolean
+	readonly stretch: ImageStretch
+	readonly mirrorHorizontal: boolean
+	readonly mirrorVertical: boolean
+	readonly invert: boolean
+	readonly scnr: ImageScnr
+	readonly useJPEG: boolean
+	readonly adjustment: ImageAdjustment
 }
 
 export interface OpenImage {
-	id?: string
-	path?: string
-	camera?: string
-	transformation: ImageTransformation
+	readonly id?: string
+	readonly path?: string
+	readonly camera?: string
+	readonly transformation: ImageTransformation
 }
 
 export interface CloseImage {
-	id: string
+	readonly id: string
 }
 
 interface CachedImage {
@@ -73,18 +73,18 @@ interface CachedImage {
 }
 
 interface ImageInfo {
-    id: string
+	readonly id: string
 	path: string
-	width: number
-	height: number
-	mono: boolean
-	bayer?: CfaPattern
-	stretch: Omit<ImageStretch, 'auto' | 'meanBackground'>
-	rightAscension?: Angle
-	declination?: Angle
-	solved: boolean
-	headers: FitsHeader
-	bitpix: Bitpix
+	readonly width: number
+	readonly height: number
+	readonly mono: boolean
+	readonly bayer?: CfaPattern
+	readonly stretch: Omit<ImageStretch, 'auto' | 'meanBackground'>
+	readonly rightAscension?: Angle
+	readonly declination?: Angle
+	readonly solved: boolean
+	readonly headers: FitsHeader
+	readonly bitpix: Bitpix
 }
 
 export class ImageService {
@@ -107,7 +107,8 @@ export class ImageService {
 
 					if (outputInfo) {
 						const info: ImageInfo = {
-							id, path,
+							id,
+							path,
 							width: outputInfo.width,
 							height: outputInfo.height,
 							mono: outputInfo.channels === 1,

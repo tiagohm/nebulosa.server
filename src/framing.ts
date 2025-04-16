@@ -4,11 +4,11 @@ import { hips2Fits } from 'nebulosa/src/hips2fits'
 import hipsSurveys from '../data/hips-surveys.json' with { type: 'json' }
 
 export interface Framing {
-	hipsSurvey: string
-	rightAscension: string | Angle
-	declination: string | Angle
-	width: number
-	height: number
+	readonly hipsSurvey: string
+	readonly rightAscension: string | Angle
+	readonly declination: string | Angle
+	readonly width: number
+	readonly height: number
 	fov: number // deg
 	rotation: number // deg
 }

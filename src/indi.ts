@@ -33,8 +33,8 @@ export enum DeviceInterfaceType {
 }
 
 export interface DriverInfo {
-	executable: string
-	version: string
+	readonly executable: string
+	readonly version: string
 }
 
 export interface Device {
@@ -116,8 +116,8 @@ export interface Camera extends GuideOutput, Thermometer {
 }
 
 export interface GuidePulse {
-	direction: GuideDirection
-	duration: number
+	readonly direction: GuideDirection
+	readonly duration: number
 }
 
 export interface IndiDeviceEventHandler {

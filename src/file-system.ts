@@ -6,31 +6,31 @@ import os from 'os'
 import { basename, dirname, join } from 'path'
 
 export interface ListDirectory {
-	path?: string
-	filter?: string
-	directoryOnly?: boolean
+	readonly path?: string
+	readonly filter?: string
+	readonly directoryOnly?: boolean
 }
 
 export interface CreateDirectory extends MakeDirectoryOptions {
-	path: string
-	name: string
+	readonly path: string
+	readonly name: string
 }
 
 export interface DirectoryEntry {
-	name: string
-	path: string
+	readonly name: string
+	readonly path: string
 }
 
 export interface FileEntry extends DirectoryEntry {
-	directory: boolean
-	size: number
-	updatedAt: number
+	readonly directory: boolean
+	readonly size: number
+	readonly updatedAt: number
 }
 
 export interface FileSystem {
-	path: string
-	tree: DirectoryEntry[]
-	entries: FileEntry[]
+	readonly path: string
+	readonly tree: DirectoryEntry[]
+	readonly entries: FileEntry[]
 }
 
 const fileEntryComparator = (a: FileEntry, b: FileEntry) => {
