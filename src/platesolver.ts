@@ -1,9 +1,10 @@
 import Elysia from 'elysia'
 import { type Angle, arcsec, deg, parseAngle } from 'nebulosa/src/angle'
 import { astapPlateSolve } from 'nebulosa/src/astap'
+import { novaAstrometryNetPlateSolve } from 'nebulosa/src/astrometrynet'
 import { type Parity, type PlateSolution, fovFrom } from 'nebulosa/src/platesolver'
 
-export type PlateSolverType = 'ASTAP' | 'PIXINSIGHT' | 'ASTROMETRY_NET' | 'ASTROMETRY_NET_ONLINE' | 'SIRIL'
+export type PlateSolverType = 'ASTAP' | 'PIXINSIGHT' | 'ASTROMETRY_NET' | 'NOVA_ASTROMETRY_NET' | 'SIRIL'
 
 export interface PlateSolveStart {
 	readonly id: string
@@ -40,15 +41,16 @@ export interface PlateSolved {
 }
 
 export class PlateSolverService {
-	private readonly aborters = new Map<string, AbortController>()
+	private readonly tasks = new Map<string, AbortController>()
 
 	async start(req: PlateSolveStart): Promise<PlateSolved> {
 		const ra = parseAngle(req.centerRA, { isHour: true })
 		const dec = parseAngle(req.centerDEC)
 		const radius = req.blind ? 0 : deg(req.radius)
+		const fov = arcsec(fovFrom(req.focalLength, req.pixelSize))
 
 		const aborter = new AbortController()
-		this.aborters.set(req.id, aborter)
+		this.tasks.set(req.id, aborter)
 
 		let solver: Promise<PlateSolution | undefined> | undefined
 
@@ -57,10 +59,23 @@ export class PlateSolverService {
 				req.path,
 				{
 					...req,
-					fov: arcsec(fovFrom(req.focalLength, req.pixelSize)),
+					fov,
 					ra,
 					dec,
 					radius,
+				},
+				aborter.signal,
+			)
+		} else if (req.type === 'NOVA_ASTROMETRY_NET') {
+			solver = novaAstrometryNetPlateSolve(
+				req.path,
+				{
+					ra,
+					dec,
+					radius,
+					scaleType: fov <= 0 ? 'ul' : 'ev',
+					scaleEstimated: fov <= 0 ? undefined : fov,
+					scaleError: fov <= 0 ? undefined : 10, // %
 				},
 				aborter.signal,
 			)
@@ -74,7 +89,7 @@ export class PlateSolverService {
 					return solution
 				}
 			} finally {
-				this.aborters.delete(req.id)
+				this.tasks.delete(req.id)
 			}
 		}
 
@@ -82,7 +97,7 @@ export class PlateSolverService {
 	}
 
 	stop(req: PlateSolveStop) {
-		this.aborters.get(req.id)?.abort()
+		this.tasks.get(req.id)?.abort()
 	}
 }
 
