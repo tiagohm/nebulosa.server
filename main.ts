@@ -13,7 +13,7 @@ import { ImageService, X_IMAGE_INFO_HEADER, image } from './src/image'
 import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { PlateSolverService, plateSolver } from './src/platesolver'
-import { StarDetectionService, starDetection } from './src/star-detection'
+import { StarDetectionService, starDetection } from './src/stardetection'
 
 const args = parseArgs({
 	args: Bun.argv,

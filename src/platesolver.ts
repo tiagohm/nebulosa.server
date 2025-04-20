@@ -1,26 +1,24 @@
 import Elysia from 'elysia'
 import { type Angle, arcsec, deg, parseAngle } from 'nebulosa/src/angle'
 import { astapPlateSolve } from 'nebulosa/src/astap'
-import { novaAstrometryNetPlateSolve } from 'nebulosa/src/astrometrynet'
-import { type Parity, type PlateSolution, fovFrom } from 'nebulosa/src/platesolver'
+import { localAstrometryNetPlateSolve, novaAstrometryNetPlateSolve } from 'nebulosa/src/astrometrynet'
+import { type Parity, type PlateSolution, type PlateSolveOptions, fovFrom } from 'nebulosa/src/platesolver'
 
 export type PlateSolverType = 'ASTAP' | 'PIXINSIGHT' | 'ASTROMETRY_NET' | 'NOVA_ASTROMETRY_NET' | 'SIRIL'
 
-export interface PlateSolveStart {
+export interface PlateSolveStart extends Omit<Readonly<PlateSolveOptions>, 'ra' | 'dec'> {
 	readonly id: string
 	readonly type: PlateSolverType
-	readonly executable?: string
+	readonly executable: string
 	readonly path: string
-	readonly downsample?: number
 	readonly focalLength: number
 	readonly pixelSize: number
 	readonly apiUrl?: string
 	readonly apiKey?: string
-	readonly timeout?: number
 	readonly slot?: number
 	readonly blind: boolean
-	readonly centerRA: string | number // hours
-	readonly centerDEC: string | number // deg
+	readonly ra: string | number // hours
+	readonly dec: string | number // deg
 	readonly radius: number // deg
 }
 
@@ -44,8 +42,8 @@ export class PlateSolverService {
 	private readonly tasks = new Map<string, AbortController>()
 
 	async start(req: PlateSolveStart): Promise<PlateSolved> {
-		const ra = parseAngle(req.centerRA, { isHour: true })
-		const dec = parseAngle(req.centerDEC)
+		const ra = parseAngle(req.ra, { isHour: true })
+		const dec = parseAngle(req.dec)
 		const radius = req.blind ? 0 : deg(req.radius)
 		const fov = arcsec(fovFrom(req.focalLength, req.pixelSize))
 
@@ -76,6 +74,18 @@ export class PlateSolverService {
 					scaleType: fov <= 0 ? 'ul' : 'ev',
 					scaleEstimated: fov <= 0 ? undefined : fov,
 					scaleError: fov <= 0 ? undefined : 10, // %
+				},
+				aborter.signal,
+			)
+		} else if (req.type === 'ASTROMETRY_NET') {
+			solver = localAstrometryNetPlateSolve(
+				req.path,
+				{
+					...req,
+					fov,
+					ra,
+					dec,
+					radius,
 				},
 				aborter.signal,
 			)
