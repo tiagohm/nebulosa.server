@@ -19,7 +19,6 @@ export interface PlateSolveStart extends Omit<Readonly<PlateSolveOptions>, 'ra' 
 	readonly blind: boolean
 	readonly ra: string | number // hours
 	readonly dec: string | number // deg
-	readonly radius: number // deg
 }
 
 export interface PlateSolveStop {
@@ -44,7 +43,7 @@ export class PlateSolverService {
 	async start(req: PlateSolveStart): Promise<PlateSolved> {
 		const ra = parseAngle(req.ra, { isHour: true })
 		const dec = parseAngle(req.dec)
-		const radius = req.blind ? 0 : deg(req.radius)
+		const radius = req.blind || !req.radius ? 0 : deg(req.radius)
 		const fov = arcsec(fovFrom(req.focalLength, req.pixelSize))
 
 		const aborter = new AbortController()

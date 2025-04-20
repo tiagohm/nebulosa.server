@@ -795,7 +795,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"id\": 1,\n    \"type\": \"ASTAP\",\n    // \"executable\": \"astap\",\n    \"path\": \"/tmp/astrometry.png\",\n    \"downsample\": 0,\n    \"focalLength\": 0,\n    \"pixelSize\": 0,\n    \"apiUrl\": null,\n    \"apiKey\": null,\n    \"timeout\": 300000,\n    \"slot\": 1,\n    \"blind\": false,\n    \"centerRA\": \"17:45:47\",\n    \"centerDEC\": \"-29d07m24.96s\",\n    \"radius\": 4\n}",
+							"raw": "{\n    \"id\": 1,\n    \"type\": \"ASTROMETRY_NET\",\n    \"executable\": \"solve-field\",\n    \"path\": \"/tmp/apod1.jpg\",\n    \"downsample\": 0,\n    \"focalLength\": 0,\n    \"pixelSize\": 0,\n    \"apiUrl\": null,\n    \"apiKey\": null,\n    \"timeout\": 300000, // ms\n    \"slot\": 1,\n    \"blind\": false,\n    \"ra\": \"06h 40m 51.774\",\n    \"dec\": \"+09 49 53.741\",\n    \"radius\": 4\n}",
 							"options": {
 								"raw": {
 									"language": "json"
