@@ -1,17 +1,6 @@
 import Elysia from 'elysia'
 import { astapDetectStars } from 'nebulosa/src/astap'
-
-export type StarDetectionType = 'ASTAP' | 'PIXINSIGHT' | 'SIRIL'
-
-export interface StarDetection {
-	readonly type: StarDetectionType
-	readonly executable?: string
-	readonly path: string
-	readonly timeout: number
-	readonly minSNR: number
-	readonly maxStars: number
-	readonly slot: number
-}
+import type { StarDetection } from './types'
 
 export class StarDetectionService {
 	async detectStars(req: StarDetection) {

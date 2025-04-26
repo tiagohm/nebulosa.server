@@ -1,35 +1,49 @@
-import type { Connect, ConnectionStatus } from '../../src/connection'
-import type { CreateDirectory, FileSystem, ListDirectory } from '../../src/file-system'
+import type { Connect, ConnectionStatus, CreateDirectory, ImageInfo, ListDirectory, OpenImage } from '../../src/types'
+import { X_IMAGE_INFO_HEADER } from '../../src/types'
 
 // Connection
 
 export function connect(req: Connect) {
-	return doPost<ConnectionStatus>('connections', req)
+	return POST<ConnectionStatus>('connections', req)
 }
 
 export function disconnect(id: string) {
-	return doDelete(`connections/${id}`)
+	return DELETE(`connections/${id}`)
 }
 
 export function connections() {
-	return doGet<ConnectionStatus[]>('connections')
+	return GET<ConnectionStatus[]>('connections')
+}
+
+// Image
+
+export async function openImage(req: OpenImage) {
+	const data = await BLOB('image/open', 'POST', req)
+
+	if (data) {
+		const { blob, headers } = data
+		const info = JSON.parse(headers.get(X_IMAGE_INFO_HEADER)!) as ImageInfo
+		return { blob, info }
+	}
+
+	return undefined
 }
 
 // File System
 
 export function listDirectory(req?: ListDirectory) {
-	return doPost<FileSystem>('file-system/list', req)
+	return POST<FileSystem>('file-system/list', req)
 }
 
 export function createDirectory(req: CreateDirectory) {
-	return doPost<{ path: string }>('file-system/create', req)
+	return POST<{ path: string }>('file-system/create', req)
 }
 
 const DEFAULT_HEADERS = new Headers({ 'Content-Type': 'application/json' })
 
 const DEFAULT_URL = 'http://localhost:7000'
 
-async function doFetch(path: string, init?: RequestInit) {
+async function request(path: string, init?: RequestInit) {
 	const url = localStorage.getItem('api.url') || DEFAULT_URL
 
 	try {
@@ -39,30 +53,38 @@ async function doFetch(path: string, init?: RequestInit) {
 	}
 }
 
-function makeResponse<T>(text?: string) {
+function json<T>(text?: string) {
 	return text ? (JSON.parse(text) as T) : undefined
 }
 
-async function doGet<T>(path: string) {
-	const response = await doFetch(path, { method: 'GET', redirect: 'follow' })
+async function GET<T>(path: string) {
+	const response = await request(path, { method: 'GET', redirect: 'follow' })
 	const text = await response?.text()
-	return makeResponse<T>(text)
+	return json<T>(text)
 }
 
-async function doPost<T>(path: string, body?: unknown) {
+async function POST<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
-	const response = await doFetch(path, { method: 'POST', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
+	const response = await request(path, { method: 'POST', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
 	const text = await response?.text()
-	return makeResponse<T>(text)
+	return json<T>(text)
 }
 
-async function doPut<T>(path: string, body?: unknown) {
+async function PUT<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
-	const response = await doFetch(path, { method: 'PUT', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
+	const response = await request(path, { method: 'PUT', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
 	const text = await response?.text()
-	return makeResponse<T>(text)
+	return json<T>(text)
 }
 
-function doDelete(path: string) {
-	return doFetch(path, { method: 'DELETE', redirect: 'follow' })
+function DELETE(path: string) {
+	return request(path, { method: 'DELETE', redirect: 'follow' })
+}
+
+async function BLOB<T>(path: string, method: string, body?: unknown) {
+	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
+	const response = await request(path, { method, body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
+	const blob = await response?.blob()
+	const headers = response?.headers
+	return blob && headers ? { blob, headers } : undefined
 }

@@ -1,6 +1,6 @@
 import type { DynamicDialogInstance, DynamicDialogOptions } from 'primevue/dynamicdialogoptions'
 import { defineAsyncComponent } from 'vue'
-import type { ListDirectory } from '../../src/file-system'
+import type { ListDirectory } from '../../src/types'
 
 export interface DynamicDialogOpener {
 	open: (content: unknown, options?: DynamicDialogOptions) => DynamicDialogInstance

@@ -1,18 +1,6 @@
 import Elysia from 'elysia'
 import { IndiClient, type IndiClientHandler } from 'nebulosa/src/indi'
-
-export type ConnectionType = 'INDI' | 'ALPACA'
-
-export interface Connect {
-	readonly host: string
-	readonly port: number
-	readonly type: ConnectionType
-}
-
-export interface ConnectionStatus extends Connect {
-	readonly id: string
-	readonly ip?: string
-}
+import type { Connect, ConnectionStatus } from './types'
 
 export class ConnectionService {
 	private readonly clients = new Map<string, IndiClient>()

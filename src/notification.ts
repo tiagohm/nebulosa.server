@@ -1,16 +1,7 @@
-import type { WebSocketMessage, WebSocketMessageHandler } from './message'
+import type { WebSocketMessageHandler } from './message'
+import type { Notification } from './types'
 
-export const NOTIFICATION_TYPE = 'NOTIFICATION'
-
-export type Severity = 'info' | 'success' | 'warn' | 'error'
-
-export interface Notification extends WebSocketMessage {
-	readonly type: 'NOTIFICATION'
-	readonly target?: string
-	readonly severity?: Severity
-	readonly title?: string
-	readonly body: string
-}
+const NOTIFICATION_TYPE = 'NOTIFICATION'
 
 export class NotificationSender {
 	constructor(private readonly webSocketMessageHandler: WebSocketMessageHandler) {}

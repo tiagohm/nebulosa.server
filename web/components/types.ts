@@ -24,9 +24,8 @@ export interface TextButtonProps extends /* @vue-ignore */ Omit<ButtonProps, 'ic
 	icon: string
 }
 
-export interface ImageViewerProps {
-	src: string
-}
+// biome-ignore lint/suspicious/noEmptyInterface:
+export interface ImageViewerProps {}
 
 export interface ExtendedMenuItemCommandEvent {
 	originalEvent: Event

@@ -5,7 +5,7 @@
         import type { DynamicDialogInstance } from 'primevue/dynamicdialogoptions'
         import type { MenuItem } from 'primevue/menuitem'
         import { type Ref, inject, onMounted, ref, toRaw, watch } from 'vue'
-        import type { FileEntry, ListDirectory } from '../../src/file-system'
+        import type { FileEntry, ListDirectory } from '../../src/types'
         import FloatInputText from './FloatInputText.vue'
         import IconButton from './IconButton.vue'
         import TextButton from './TextButton.vue'

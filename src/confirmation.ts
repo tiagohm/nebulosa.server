@@ -1,18 +1,8 @@
 import Elysia from 'elysia'
-import type { WebSocketMessage, WebSocketMessageHandler } from './message'
+import type { WebSocketMessageHandler } from './message'
+import type { Confirm, Confirmation } from './types'
 
-export const CONFIRMATION_TYPE = 'CONFIRMATION'
-
-export interface Confirm {
-	readonly key: string
-	readonly accepted: boolean
-}
-
-export interface Confirmation extends WebSocketMessage {
-	readonly type: 'CONFIRMATION'
-	readonly key: string
-	readonly message: string
-}
+const CONFIRMATION_TYPE = 'CONFIRMATION'
 
 export class ConfirmationService {
 	private readonly confirmations = new Map<string, (value: boolean) => void>()

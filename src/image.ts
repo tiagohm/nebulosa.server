@@ -1,90 +1,21 @@
 import Elysia from 'elysia'
 import { unlinkSync } from 'fs'
 import fs from 'fs/promises'
-import type { Angle } from 'nebulosa/src/angle'
-import { type Bitpix, type Fits, type FitsHeader, readFits } from 'nebulosa/src/fits'
-import { type CfaPattern, type Image, type ImageChannel, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
+import { type Fits, readFits } from 'nebulosa/src/fits'
+import { type Image, readImageFromFits, writeImageToFormat } from 'nebulosa/src/image'
 import { fileHandleSource } from 'nebulosa/src/io'
 import os from 'os'
 import { join } from 'path'
 import fovCameras from '../data/cameras.json' with { type: 'json' }
 import fovTelescopes from '../data/telescopes.json' with { type: 'json' }
-
-export const X_IMAGE_INFO_HEADER = 'X-Image-Info'
-
-export interface ImageStretch {
-	readonly auto: boolean
-	readonly shadow: number // 0 - 65535
-	readonly highlight: number // 0 - 65535
-	readonly midtone: number // 0 - 65535
-	readonly meanBackground: number
-}
-
-export interface ImageScnr {
-	readonly channel: ImageChannel
-	readonly amount: number
-	readonly method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
-}
-
-export interface ImageAdjustmentLevel {
-	readonly enabled: boolean
-	readonly value: number
-}
-
-export interface ImageAdjustment {
-	readonly enabled: boolean
-	readonly contrast: ImageAdjustmentLevel
-	readonly brightness: ImageAdjustmentLevel
-	readonly exposure: ImageAdjustmentLevel
-	readonly gamma: ImageAdjustmentLevel
-	readonly saturation: ImageAdjustmentLevel
-	readonly fade: ImageAdjustmentLevel
-}
-
-export interface ImageTransformation {
-	readonly force: boolean
-	readonly calibrationGroup?: string
-	readonly debayer: boolean
-	readonly stretch: ImageStretch
-	readonly mirrorHorizontal: boolean
-	readonly mirrorVertical: boolean
-	readonly invert: boolean
-	readonly scnr: ImageScnr
-	readonly useJPEG: boolean
-	readonly adjustment: ImageAdjustment
-}
-
-export interface OpenImage {
-	readonly id?: string
-	readonly path?: string
-	readonly camera?: string
-	readonly transformation: ImageTransformation
-}
-
-export interface CloseImage {
-	readonly id: string
-}
+import type { CloseImage, ImageInfo, OpenImage } from './types'
+import { X_IMAGE_INFO_HEADER } from './types'
 
 interface CachedImage {
 	fits?: Fits
 	image?: Image
 	paths: Partial<Record<'jpeg' | 'png', string>>
 	info: ImageInfo
-}
-
-interface ImageInfo {
-	readonly id: string
-	path: string
-	readonly width: number
-	readonly height: number
-	readonly mono: boolean
-	readonly bayer?: CfaPattern
-	readonly stretch: Omit<ImageStretch, 'auto' | 'meanBackground'>
-	readonly rightAscension?: Angle
-	readonly declination?: Angle
-	readonly solved: boolean
-	readonly headers: FitsHeader
-	readonly bitpix: Bitpix
 }
 
 export class ImageService {

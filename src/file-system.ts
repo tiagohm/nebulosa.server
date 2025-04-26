@@ -1,37 +1,9 @@
 import { Glob } from 'bun'
 import Elysia from 'elysia'
-import type { MakeDirectoryOptions } from 'fs'
 import fs from 'fs/promises'
 import os from 'os'
 import { basename, dirname, join } from 'path'
-
-export interface ListDirectory {
-	readonly path?: string
-	readonly filter?: string
-	readonly directoryOnly?: boolean
-}
-
-export interface CreateDirectory extends MakeDirectoryOptions {
-	readonly path: string
-	readonly name: string
-}
-
-export interface DirectoryEntry {
-	readonly name: string
-	readonly path: string
-}
-
-export interface FileEntry extends DirectoryEntry {
-	readonly directory: boolean
-	readonly size: number
-	readonly updatedAt: number
-}
-
-export interface FileSystem {
-	readonly path: string
-	readonly tree: DirectoryEntry[]
-	readonly entries: FileEntry[]
-}
+import type { CreateDirectory, DirectoryEntry, FileEntry, ListDirectory } from './types'
 
 const fileEntryComparator = (a: FileEntry, b: FileEntry) => {
 	if (a.directory === b.directory) return a.path.localeCompare(b.path)
@@ -81,7 +53,7 @@ export function fileSystem(fileSystemService: FileSystemService) {
 	return app
 }
 
-async function findDirectory(path?: string) {
+export async function findDirectory(path?: string) {
 	if (!path) return undefined
 	else if (!(await fs.exists(path))) return findDirectory(dirname(path))
 	else {

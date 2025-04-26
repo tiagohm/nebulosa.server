@@ -1,41 +1,9 @@
 import Elysia from 'elysia'
-import { type Angle, arcsec, deg, parseAngle } from 'nebulosa/src/angle'
+import { arcsec, deg, parseAngle } from 'nebulosa/src/angle'
 import { astapPlateSolve } from 'nebulosa/src/astap'
 import { localAstrometryNetPlateSolve, novaAstrometryNetPlateSolve } from 'nebulosa/src/astrometrynet'
-import { type Parity, type PlateSolution, type PlateSolveOptions, fovFrom } from 'nebulosa/src/platesolver'
-
-export type PlateSolverType = 'ASTAP' | 'PIXINSIGHT' | 'ASTROMETRY_NET' | 'NOVA_ASTROMETRY_NET' | 'SIRIL'
-
-export interface PlateSolveStart extends Omit<Readonly<PlateSolveOptions>, 'ra' | 'dec'> {
-	readonly id: string
-	readonly type: PlateSolverType
-	readonly executable: string
-	readonly path: string
-	readonly focalLength: number
-	readonly pixelSize: number
-	readonly apiUrl?: string
-	readonly apiKey?: string
-	readonly slot?: number
-	readonly blind: boolean
-	readonly ra: string | number // hours
-	readonly dec: string | number // deg
-}
-
-export interface PlateSolveStop {
-	readonly id: string
-}
-
-export interface PlateSolved {
-	readonly solved: boolean
-	readonly orientation?: number
-	readonly scale?: number
-	readonly rightAscension?: Angle
-	readonly declination?: Angle
-	readonly width?: number
-	readonly height?: number
-	readonly radius?: number
-	readonly parity?: Parity
-}
+import { type PlateSolution, fovFrom } from 'nebulosa/src/platesolver'
+import type { PlateSolveStart, PlateSolveStop, PlateSolved } from './types'
 
 export class PlateSolverService {
 	private readonly tasks = new Map<string, AbortController>()

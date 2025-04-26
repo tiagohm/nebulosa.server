@@ -1,14 +1,10 @@
 import { Elysia } from 'elysia'
 import type { CfaPattern } from 'nebulosa/src/image'
 // biome-ignore format:
-import { type DefBlobVector, type DefNumber, type DefNumberVector, type DefSwitchVector, type DefTextVector, type DefVector, type IndiClient, type IndiClientHandler, type OneNumber, PropertyPermission, PropertyState, type SetBlobVector, type SetNumberVector, type SetSwitchVector, type SetTextVector, type SetVector } from 'nebulosa/src/indi'
-import type { ConnectionService, ConnectionStatus } from './connection'
-
-export type DeviceType = 'CAMERA' | 'MOUNT' | 'WHEEL' | 'FOCUSER' | 'ROTATOR' | 'GPS' | 'DOME' | 'GUIDE_OUTPUT' | 'LIGHT_BOX' | 'DUST_CAP'
-
-export type SubDeviceType = 'GUIDE_OUTPUT' | 'THERMOMETER' | 'GPS'
-
-export type GuideDirection = 'NORTH' | 'SOUTH' | 'WEST' | 'EAST'
+import type { DefBlobVector, DefNumber, DefNumberVector, DefSwitchVector, DefTextVector, DefVector, IndiClient, IndiClientHandler, OneNumber, PropertyState, SetBlobVector, SetNumberVector, SetSwitchVector, SetTextVector, SetVector } from 'nebulosa/src/indi'
+import type { ConnectionService } from './connection'
+import type { Camera, Device, DeviceType, GuideOutput, GuidePulse, SubDeviceType, Thermometer } from './types'
+import { DEFAULT_CAMERA, isCamera, isGuideOutput } from './types'
 
 export enum DeviceInterfaceType {
 	TELESCOPE = 0x0001, // Telescope interface, must subclass INDI::Telescope.
@@ -32,94 +28,6 @@ export enum DeviceInterfaceType {
 	POWER = 0x40000, // Auxiliary interface.
 }
 
-export interface DriverInfo {
-	readonly executable: string
-	readonly version: string
-}
-
-export interface Device {
-	type: DeviceType
-	id: string
-	name: string
-	connected: boolean
-	driver: DriverInfo
-	client: ConnectionStatus
-}
-
-export interface Thermometer extends Device {
-	hasThermometer: boolean
-	temperature: number
-}
-
-export interface GuideOutput extends Device {
-	canPulseGuide: boolean
-	pulseGuiding: boolean
-}
-
-export interface Camera extends GuideOutput, Thermometer {
-	hasCoolerControl: boolean
-	coolerPower: number
-	cooler: boolean
-	hasDewHeater: boolean
-	dewHeater: boolean
-	frameFormats: string[]
-	canAbort: boolean
-	cfa: {
-		offsetX: number
-		offsetY: number
-		type: CfaPattern
-	}
-	exposure: {
-		time: number
-		min: number
-		max: number
-		state: PropertyState
-	}
-	hasCooler: boolean
-	canSetTemperature: boolean
-	canSubFrame: boolean
-	frame: {
-		x: number
-		minX: number
-		maxX: number
-		y: number
-		minY: number
-		maxY: number
-		width: number
-		minWidth: number
-		maxWidth: number
-		height: number
-		minHeight: number
-		maxHeight: number
-	}
-	canBin: boolean
-	bin: {
-		maxX: number
-		maxY: number
-		x: number
-		y: number
-	}
-	gain: {
-		value: number
-		min: number
-		max: number
-	}
-	offset: {
-		value: number
-		min: number
-		max: number
-	}
-	pixelSize: {
-		x: number
-		y: number
-	}
-}
-
-export interface GuidePulse {
-	readonly direction: GuideDirection
-	readonly duration: number
-}
-
 export interface IndiDeviceEventHandler {
 	readonly deviceUpdated?: (device: Device, property: string, state?: PropertyState) => void
 	readonly deviceAdded?: (device: Device, type: DeviceType | SubDeviceType) => void
@@ -135,97 +43,8 @@ export interface IndiDeviceEventHandler {
 	readonly guideOutputRemoved?: (guideOutput: GuideOutput) => void
 }
 
-const EMPTY_CAMERA: Camera = {
-	hasCoolerControl: false,
-	coolerPower: 0,
-	cooler: false,
-	hasDewHeater: false,
-	dewHeater: false,
-	frameFormats: [],
-	canAbort: false,
-	cfa: {
-		offsetX: 0,
-		offsetY: 0,
-		type: 'RGGB',
-	},
-	exposure: {
-		time: 0,
-		min: 0,
-		max: 0,
-		state: PropertyState.IDLE,
-	},
-	hasCooler: false,
-	canSetTemperature: false,
-	canSubFrame: false,
-	frame: {
-		x: 0,
-		minX: 0,
-		maxX: 0,
-		y: 0,
-		minY: 0,
-		maxY: 0,
-		width: 0,
-		minWidth: 0,
-		maxWidth: 0,
-		height: 0,
-		minHeight: 0,
-		maxHeight: 0,
-	},
-	canBin: false,
-	bin: {
-		maxX: 0,
-		maxY: 0,
-		x: 0,
-		y: 0,
-	},
-	gain: {
-		value: 0,
-		min: 0,
-		max: 0,
-	},
-	offset: {
-		value: 0,
-		min: 0,
-		max: 0,
-	},
-	pixelSize: {
-		x: 0,
-		y: 0,
-	},
-	canPulseGuide: false,
-	pulseGuiding: false,
-	type: 'CAMERA',
-	id: '',
-	name: '',
-	connected: false,
-	driver: {
-		executable: '',
-		version: '',
-	},
-	client: {
-		id: '',
-		type: 'INDI',
-		host: '',
-		port: 0,
-	},
-	hasThermometer: false,
-	temperature: 0,
-}
-
 export function isInterfaceType(value: number, type: DeviceInterfaceType) {
 	return (value & type) !== 0
-}
-
-export function isCamera(device: Device): device is Camera {
-	return device.type === 'CAMERA'
-}
-
-export function isThermometer(device: Device): device is Thermometer {
-	return 'hasThermometer' in device && device.hasThermometer !== undefined
-}
-
-export function isGuideOutput(device: Device): device is GuideOutput {
-	return 'canPulseGuide' in device && device.canPulseGuide !== undefined
 }
 
 export function ask(client: IndiClient, device: Device) {
@@ -300,7 +119,7 @@ export class IndiService implements IndiClientHandler {
 			case 'CCD_ABORT_EXPOSURE': {
 				if (isCamera(device)) {
 					if (tag[0] === 'd') {
-						const canAbort = (message as DefSwitchVector).permission !== PropertyPermission.READ_ONLY
+						const canAbort = (message as DefSwitchVector).permission !== 'ro'
 						device.canAbort = canAbort
 						this.deviceUpdated(device, 'canAbort', message.state)
 					}
@@ -324,7 +143,7 @@ export class IndiService implements IndiClientHandler {
 					reject = false
 
 					if (!this.cameraMap.has(message.device)) {
-						const camera: Camera = { ...structuredClone(EMPTY_CAMERA), id: message.device, name: message.device, driver: { executable, version }, client: this.connectionService.status(client)! }
+						const camera: Camera = { ...structuredClone(DEFAULT_CAMERA), id: message.device, name: message.device, driver: { executable, version }, client: this.connectionService.status(client)! }
 						this.cameraMap.set(camera.name, camera)
 						this.addProperty(camera, message, tag)
 						this.processEnqueuedMessages(client, camera)
@@ -409,7 +228,7 @@ export class IndiService implements IndiClientHandler {
 						update = true
 					}
 
-					if (device.exposure.state === PropertyState.BUSY || device.exposure.state === PropertyState.OK) {
+					if (device.exposure.state === 'Busy' || device.exposure.state === 'Ok') {
 						device.exposure.time = Math.trunc(value.value * 1000000)
 						update = true
 					}
@@ -441,7 +260,7 @@ export class IndiService implements IndiClientHandler {
 							this.deviceUpdated(device, 'hasCooler', message.state)
 						}
 
-						const canSetTemperature = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+						const canSetTemperature = (message as DefNumberVector).permission !== 'ro'
 
 						if (device.canSetTemperature !== canSetTemperature) {
 							device.canSetTemperature = canSetTemperature
@@ -473,7 +292,7 @@ export class IndiService implements IndiClientHandler {
 					let update = false
 
 					if (tag[0] === 'd') {
-						const canSubFrame = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+						const canSubFrame = (message as DefNumberVector).permission !== 'ro'
 
 						if (device.canSubFrame !== canSubFrame) {
 							device.canSubFrame = canSubFrame
@@ -513,7 +332,7 @@ export class IndiService implements IndiClientHandler {
 					const binY = message.elements.VER_BIN
 
 					if (tag[0] === 'd') {
-						const canBin = (message as DefNumberVector).permission !== PropertyPermission.READ_ONLY
+						const canBin = (message as DefNumberVector).permission !== 'ro'
 
 						if (device.canBin !== canBin) {
 							device.canBin = canBin
@@ -583,7 +402,7 @@ export class IndiService implements IndiClientHandler {
 							this.addGuideOutput(device)
 						}
 					} else if (device.canPulseGuide) {
-						const pulseGuiding = message.state === PropertyState.BUSY
+						const pulseGuiding = message.state === 'Busy'
 
 						if (pulseGuiding !== device.pulseGuiding) {
 							device.pulseGuiding = pulseGuiding

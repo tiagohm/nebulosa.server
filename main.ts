@@ -9,11 +9,13 @@ import { ConfirmationService, confirmation } from './src/confirmation'
 import { ConnectionService, connection } from './src/connection'
 import { FileSystemService, fileSystem } from './src/file-system'
 import { FramingService, framing } from './src/framing'
-import { ImageService, X_IMAGE_INFO_HEADER, image } from './src/image'
-import { type Device, type DeviceType, type IndiDeviceEventHandler, IndiService, type SubDeviceType, cameras, guideOutputs, indi, thermometers } from './src/indi'
+import { ImageService, image } from './src/image'
+import { type IndiDeviceEventHandler, IndiService, cameras, guideOutputs, indi, thermometers } from './src/indi'
 import { WebSocketMessageHandler } from './src/message'
 import { PlateSolverService, plateSolver } from './src/platesolver'
 import { StarDetectionService, starDetection } from './src/stardetection'
+import type { Device, DeviceType, SubDeviceType } from './src/types'
+import { X_IMAGE_INFO_HEADER } from './src/types'
 
 const args = parseArgs({
 	args: Bun.argv,

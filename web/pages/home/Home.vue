@@ -62,13 +62,14 @@
             }
         }
 
-        const openImageStorage = useStorage('image.open.path', '')
+        const imageOpenPath = useStorage('image.open.path', '')
 
         async function openImage() {
-            const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { path: openImageStorage.value, filter: '*.*', mode: 'openDirectory' } })
+            const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { path: imageOpenPath.value, filter: '*.{fits,fit,xisf}', mode: 'openFile' } })
 
             if (paths?.length) {
-                openImageStorage.value = paths[0]
+                imageOpenPath.value = paths[0]
+                imageViewer.value?.open(paths[0])
             }
         }
 
@@ -123,8 +124,7 @@
 
     <!-- Content -->
 
-    <ImageViewer ref='imageViewer'
-                 src="https://github.com/dstndstn/astrometry.net/blob/main/demo/apod4.jpg?raw=true" />
+    <ImageViewer ref='imageViewer' />
 
     <!-- Connection Dialog -->
 

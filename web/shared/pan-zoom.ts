@@ -1,6 +1,6 @@
 // Adapted from https://github.com/timmywil/panzoom
 
-import type { Point } from 'electron'
+import type { Point } from '../../src/types'
 
 export type PanZoomEvent = 'panzoomstart' | 'panzoomchange' | 'panzoompan' | 'panzoomzoom' | 'panzoomreset' | 'panzoomend'
 

@@ -1,14 +1,27 @@
 <script setup
         lang="ts">
+        import { openImage } from '@/shared/api'
         import { PanZoom, type PanZoomOptions } from '@/shared/pan-zoom'
+        import { useStorage } from '@vueuse/core'
         import { ref, useTemplateRef } from 'vue'
+        import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo } from '../../src/types'
         import MenuItem from './MenuItem.vue'
         import { type ExtendedMenuItem, type ImageViewerProps, SEPARATOR_MENU_ITEM } from './types'
 
         defineProps<ImageViewerProps>()
 
-        const image = useTemplateRef('image')
-        let panZoom: PanZoom | undefined
+        interface LoadedImage {
+            readonly image: HTMLImageElement
+            info: ImageInfo
+            readonly wrapper: HTMLDivElement
+            readonly owner: HTMLElement
+            readonly camera?: Camera
+            panZoom?: PanZoom
+        }
+
+        const wrapper = useTemplateRef('wrapper')
+        const images = new Map<string, LoadedImage>()
+        const transformation = useStorage('image.transformation', structuredClone(DEFAULT_IMAGE_TRANSFORMATION))
 
         const contextMenu = useTemplateRef('contextMenu')
         const contextMenuItems = ref<ExtendedMenuItem[]>([
@@ -209,13 +222,10 @@
             },
         ])
 
-        function imageLoaded() {
-            const wrapper = image.value!.parentElement
-            const owner = wrapper?.parentElement
+        function imageLoaded(image: LoadedImage) {
+            URL.revokeObjectURL(image.image.src)
 
-            // URL.revokeObjectURL(image.src)
-
-            if (!panZoom && wrapper && owner) {
+            if (!image.panZoom && image.wrapper && image.owner) {
                 const options: Partial<PanZoomOptions> = {
                     maxScale: 500,
                     canExclude: (e) => {
@@ -228,13 +238,13 @@
                     }
                 }
 
-                panZoom = new PanZoom(wrapper, options)
+                image.panZoom = new PanZoom(image.wrapper, options)
 
-                wrapper.addEventListener('wheel', (e) => {
+                image.wrapper.addEventListener('wheel', (e) => {
                     if (e.shiftKey) {
                         // this.rotateWithWheel(e)
-                    } else if (e.target === owner || e.target === wrapper || e.target === image.value /*|| e.target === this.roi().nativeElement*/ || (e.target as HTMLElement).tagName === 'circle') {
-                        panZoom?.zoomWithWheel(e)
+                    } else if (!e.target || e.target === image.owner || e.target === image.wrapper || e.target === image.image /*|| e.target === this.roi().nativeElement*/ || (e.target as HTMLElement).tagName === 'circle') {
+                        image.panZoom?.zoomWithWheel(e)
                     }
                 })
 
@@ -244,19 +254,52 @@
             }
         }
 
-        defineExpose({ imageLoaded })
+        function imageClicked(image: LoadedImage) {
+            if (image.owner.lastChild !== image.wrapper) {
+                const wrapper = image.owner.removeChild(image.wrapper)
+                image.owner.appendChild(wrapper)
+            }
+        }
+
+        async function open(path: string, camera?: Camera) {
+            const image = await openImage({ path, camera: camera?.id, transformation: transformation.value })
+
+            if (image) {
+                const { blob, info } = image
+                const key = camera?.id || path
+                let item = images.get(key)
+
+                if (item) {
+                    item.info = info
+                } else {
+                    const div = document.createElement('div')
+                    div.classList.add('inline-block', 'absolute')
+                    div.style.backfaceVisibility = 'hidden'
+
+                    const image = document.createElement('img')
+                    item = { image, info, wrapper: div, owner: wrapper.value! }
+                    image.onload = () => imageLoaded(item!)
+                    image.oncontextmenu = (e) => contextMenu.value?.show(e)
+                    image.onpointerdown = () => imageClicked(item!)
+                    image.classList.add('select-none', 'shadow-md')
+
+                    div.appendChild(image)
+                    item.owner.appendChild(div)
+
+                    images.set(key, item)
+                }
+
+                item.image.src = URL.createObjectURL(blob)
+            }
+        }
+
+        defineExpose({ open })
 </script>
 
 <template>
-    <div class="w-full h-full">
-        <div class="inline-block"
-             style="backface-visibility: hidden">
-            <img ref="image"
-                 class="select-none"
-                 :src="src"
-                 @load="imageLoaded()"
-                 @contextmenu="contextMenu?.show($event)" />
-        </div>
+    <div class="w-full h-full relative"
+         ref="wrapper">
+
     </div>
 
     <ContextMenu ref="contextMenu"
