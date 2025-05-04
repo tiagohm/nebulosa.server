@@ -32,6 +32,12 @@
 	"[jsonc]": {
 		"editor.defaultFormatter": "biomejs.biome"
 	},
+    "[css]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
+	"[vue]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	},
 	"tailwindCSS.classAttributes": ["class"],
 	"tailwindCSS.rootFontSize": 12,
 	"tailwindCSS.includeLanguages": {

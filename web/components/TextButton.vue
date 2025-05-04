@@ -1,13 +1,13 @@
-<script setup
-        lang="ts">
-        import type { TextButtonProps } from './types'
+<script setup lang="ts">
+	import type { TextButtonProps } from './types'
 
-        defineProps<TextButtonProps>()
+	defineProps<TextButtonProps>()
 </script>
 
 <template>
-    <Button :text="true"
-            size="small"
-            :icon="`mdi mdi-${icon}`"
-            v-bind="$attrs" />
+	<Button
+		:text="true"
+		size="small"
+		:icon="`mdi mdi-${icon}`"
+		v-bind="$attrs" />
 </template>

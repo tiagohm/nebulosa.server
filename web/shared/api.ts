@@ -1,4 +1,4 @@
-import type { Connect, ConnectionStatus, CreateDirectory, ImageInfo, ListDirectory, OpenImage } from '../../src/types'
+import type { Connect, ConnectionStatus, CreateDirectory, FileSystem, ImageInfo, ListDirectory, OpenImage } from '../../src/types'
 import { X_IMAGE_INFO_HEADER } from '../../src/types'
 
 // Connection
@@ -26,7 +26,7 @@ export async function openImage(req: OpenImage) {
 		return { blob, info }
 	}
 
-	return undefined
+	return null
 }
 
 // File System
@@ -43,38 +43,39 @@ const DEFAULT_HEADERS = new Headers({ 'Content-Type': 'application/json' })
 
 const DEFAULT_URL = 'http://localhost:7000'
 
-async function request(path: string, init?: RequestInit) {
+function request(path: string, init?: RequestInit) {
 	const url = localStorage.getItem('api.url') || DEFAULT_URL
+	return fetch(`${url}/${path}`, init)
+}
 
-	try {
-		return await fetch(`${url}/${path}`, init)
-	} catch {
+function json<T>(text?: string) {
+	return text ? (JSON.parse(text) as T) : null
+}
+
+async function makeResponse<T>(response: Response) {
+	if (response.status >= 200 && response.status < 300) {
+		const text = await response?.text()
+		return json<T>(text)
+	} else {
 		return undefined
 	}
 }
 
-function json<T>(text?: string) {
-	return text ? (JSON.parse(text) as T) : undefined
-}
-
 async function GET<T>(path: string) {
 	const response = await request(path, { method: 'GET', redirect: 'follow' })
-	const text = await response?.text()
-	return json<T>(text)
+	return makeResponse<T>(response)
 }
 
 async function POST<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
 	const response = await request(path, { method: 'POST', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
-	const text = await response?.text()
-	return json<T>(text)
+	return makeResponse<T>(response)
 }
 
 async function PUT<T>(path: string, body?: unknown) {
 	const raw = body === undefined || body === null ? undefined : JSON.stringify(body)
 	const response = await request(path, { method: 'PUT', body: raw, headers: DEFAULT_HEADERS, redirect: 'follow' })
-	const text = await response?.text()
-	return json<T>(text)
+	return makeResponse<T>(response)
 }
 
 function DELETE(path: string) {

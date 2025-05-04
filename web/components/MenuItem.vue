@@ -1,25 +1,27 @@
-<script setup
-        lang="ts">
-        import type { MenuItemProps } from './types'
+<script setup lang="ts">
+	import type { MenuItemProps } from './types'
 
-        defineProps<MenuItemProps>()
+	defineProps<MenuItemProps>()
 </script>
 
 <template>
-    <a class="flex min-h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-md p-1"
-       :class="{ 'bg-green-800': item.selected && !item.disabled }"
-       v-bind="props.action">
-        <div class="flex items-center justify-between gap-2 text-sm">
-            <i :class="item.icon"></i>
-            <span>{{ item.label }}</span>
-        </div>
-        <Checkbox v-if="item.checkable"
-                  v-model="item.checked"
-                  @update:model-value="value => item.check?.(value, item)"
-                  size="small"
-                  variant="filled"
-                  binary />
-        <i v-if="item.items?.length"
-           class="mdi mdi-menu-right" />
-    </a>
+	<a
+		class="flex min-h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-md p-1"
+		:class="{ 'bg-green-800': item.selected && !item.disabled }"
+		v-bind="props.action">
+		<div class="flex items-center justify-between gap-2 text-sm">
+			<i :class="item.icon"></i>
+			<span>{{ item.label }}</span>
+		</div>
+		<Checkbox
+			v-if="item.checkable"
+			v-model="item.checked"
+			@update:model-value="(value) => item.check?.(value, item)"
+			size="small"
+			variant="filled"
+			binary />
+		<i
+			v-if="item.items?.length"
+			class="mdi mdi-menu-right" />
+	</a>
 </template>

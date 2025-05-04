@@ -1,13 +1,13 @@
-<script setup
-        lang="ts">
-        import IconButton from './IconButton.vue'
-        import type { ConnectButtonProps } from './types'
+<script setup lang="ts">
+	import IconButton from './IconButton.vue'
+	import type { ConnectButtonProps } from './types'
 
-        defineProps<ConnectButtonProps>()
+	defineProps<ConnectButtonProps>()
 </script>
 
 <template>
-    <IconButton :icon="connected ? 'close' : 'connection'"
-                :severity="connected ? 'danger' : 'info'"
-                v-tooltip.bottom="connected ? 'Disconnect' : 'Connect'" />
+	<IconButton
+		:icon="connected ? 'close' : 'connection'"
+		:severity="connected ? 'danger' : 'info'"
+		v-tooltip.bottom="connected ? 'Disconnect' : 'Connect'" />
 </template>

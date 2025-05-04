@@ -82,21 +82,19 @@ export const useConnectionStore = defineStore('connection', () => {
 				connected.value = false
 			}
 		} else {
-			try {
-				connecting.value = true
+			connecting.value = true
 
-				const status = await connect(current.value)
+			const status = await connect(current.value)
 
-				if (status) {
-					connected.value = true
-					current.value.connectedAt = Date.now()
-					current.value.status = status
-				}
-			} catch {
+			if (status) {
+				connected.value = true
+				current.value.connectedAt = Date.now()
+				current.value.status = status
+			} else if (status === undefined) {
 				toast.add({ severity: 'error', summary: 'ERROR', detail: 'Failed to connect.', life: 2500 })
-			} finally {
-				connecting.value = false
 			}
+
+			connecting.value = false
 		}
 	}
 
