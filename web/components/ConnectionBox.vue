@@ -43,17 +43,20 @@
 			<template #option="item">
 				<div class="flex w-full flex-row items-center justify-between gap-2">
 					<div class="flex flex-col justify-center">
-						<span class="font-bold">{{ item.option.name }}</span>
-						<span class="text-sm">{{ item.option.host }}:{{ item.option.port }}</span>
-						<span class="flex items-center gap-2">
+						<span class="flex items-center gap-2 font-bold">
+							{{ item.option.name }}
 							<Tag
 								severity="info"
 								:value="item.option.type"
 								class="max-w-fit" />
-							<span class="text-sm">
-								<i class="mdi mdi-clock" />
-								{{ formatDateTime(item.option.connectedAt, 'never') }}
-							</span>
+						</span>
+						<span class="text-sm">
+							<i class="mdi mdi-web" />
+							{{ item.option.host }}:{{ item.option.port }}
+						</span>
+						<span class="text-sm">
+							<i class="mdi mdi-clock" />
+							{{ formatDateTime(item.option.connectedAt, 'never') }}
 						</span>
 					</div>
 					<div class="flex flex-col justify-center">
