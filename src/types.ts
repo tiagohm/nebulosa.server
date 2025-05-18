@@ -1,8 +1,8 @@
 import type { Angle } from 'nebulosa/src/angle'
-import type { Bitpix, FitsHeader } from 'nebulosa/src/fits'
-import type { CfaPattern, ImageChannel } from 'nebulosa/src/image'
+import type { FitsHeader } from 'nebulosa/src/fits'
+import type { CfaPattern, ImageChannel, ImageMetadata } from 'nebulosa/src/image'
 import type { PropertyState } from 'nebulosa/src/indi'
-import type { Parity, PlateSolveOptions } from 'nebulosa/src/platesolver'
+import type { Parity, PlateSolution, PlateSolveOptions } from 'nebulosa/src/platesolver'
 
 // Atlas
 
@@ -109,15 +109,15 @@ export interface Framing {
 // Image
 
 export interface ImageStretch {
-	readonly auto: boolean
-	readonly shadow: number // 0 - 65536
-	readonly highlight: number // 0 - 65536
-	readonly midtone: number // 0 - 65536
-	readonly meanBackground: number
+	auto: boolean
+	shadow: number // 0 - 65536
+	highlight: number // 0 - 65536
+	midtone: number // 0 - 65536
+	meanBackground?: number
 }
 
 export interface ImageScnr {
-	readonly channel: ImageChannel
+	readonly channel?: ImageChannel
 	readonly amount: number
 	readonly method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
 }
@@ -138,20 +138,18 @@ export interface ImageAdjustment {
 }
 
 export interface ImageTransformation {
-	readonly force: boolean
 	readonly calibrationGroup?: string
-	readonly debayer: boolean
+	debayer: boolean
 	readonly stretch: ImageStretch
-	readonly mirrorHorizontal: boolean
-	readonly mirrorVertical: boolean
-	readonly invert: boolean
+	horizontalMirror: boolean
+	verticalMirror: boolean
+	invert: boolean
 	readonly scnr: ImageScnr
 	readonly useJPEG: boolean
 	readonly adjustment: ImageAdjustment
 }
 
 export interface OpenImage {
-	readonly id?: string
 	readonly path?: string
 	readonly camera?: string
 	readonly transformation: ImageTransformation
@@ -162,18 +160,16 @@ export interface CloseImage {
 }
 
 export interface ImageInfo {
-	readonly id: string
-	path: string
+	readonly path: string
 	readonly width: number
 	readonly height: number
 	readonly mono: boolean
-	readonly bayer?: CfaPattern
-	readonly stretch: Omit<ImageStretch, 'auto' | 'meanBackground'>
+	readonly metatada: ImageMetadata
+	readonly transformation: ImageTransformation
 	readonly rightAscension?: Angle
 	readonly declination?: Angle
-	readonly solved: boolean
 	readonly headers: FitsHeader
-	readonly bitpix: Bitpix
+	readonly solution?: PlateSolution
 }
 
 // INDI
@@ -467,11 +463,10 @@ export const DEFAULT_IMAGE_ADJUSTMENT: ImageAdjustment = {
 }
 
 export const DEFAULT_IMAGE_TRANSFORMATION: ImageTransformation = {
-	force: false,
 	debayer: true,
 	stretch: DEFAULT_IMAGE_STRETCH,
-	mirrorHorizontal: false,
-	mirrorVertical: false,
+	horizontalMirror: false,
+	verticalMirror: false,
 	invert: false,
 	scnr: DEFAULT_IMAGE_SCNR,
 	useJPEG: true,

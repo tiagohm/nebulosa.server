@@ -1,7 +1,8 @@
 import { expect, test } from 'bun:test'
 import os from 'os'
 import { join } from 'path'
-import { type StarDetection, StarDetectionService } from '../src/star-detection'
+import { StarDetectionService } from '../src/stardetection'
+import type { StarDetection } from '../src/types'
 
 process.env.TZ = 'America/Sao_Paulo'
 

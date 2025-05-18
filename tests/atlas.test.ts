@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
-import { AtlasService, type PositionOfBody } from '../src/atlas'
+import { AtlasService } from '../src/atlas'
+import type { PositionOfBody } from '../src/types'
 
 process.env.TZ = 'America/Sao_Paulo'
 

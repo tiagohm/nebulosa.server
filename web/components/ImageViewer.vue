@@ -3,7 +3,7 @@
 	import { PanZoom, type PanZoomOptions } from '@/shared/pan-zoom'
 	import { useStorage } from '@vueuse/core'
 	import { ref, useTemplateRef } from 'vue'
-	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo } from '../../src/types'
+	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo, type ImageTransformation } from '../../src/types'
 	import MenuItem from './MenuItem.vue'
 	import { type ExtendedMenuItem, type ImageViewerProps, SEPARATOR_MENU_ITEM } from './types'
 
@@ -11,6 +11,8 @@
 
 	interface LoadedImage {
 		readonly image: HTMLImageElement
+		readonly key: string
+		readonly path: string
 		info: ImageInfo
 		readonly wrapper: HTMLDivElement
 		readonly owner: HTMLElement
@@ -20,108 +22,127 @@
 
 	const wrapper = useTemplateRef('wrapper')
 	const images = new Map<string, LoadedImage>()
-	const transformation = useStorage('image.transformation', structuredClone(DEFAULT_IMAGE_TRANSFORMATION))
+	const transformation = useStorage<ImageTransformation>('image.transformation', structuredClone(DEFAULT_IMAGE_TRANSFORMATION))
 
+	let contextMenuLoadedImage: LoadedImage | undefined
 	const contextMenu = useTemplateRef('contextMenu')
-	const contextMenuItems = ref<ExtendedMenuItem[]>([
-		{
-			label: 'Save as...',
-			icon: 'mdi mdi-content-save',
-			command: () => {
-				// this.saveAs.subFrame.width ||= this.imageInfo?.width ?? 0
-				// this.saveAs.subFrame.height ||= this.imageInfo?.height ?? 0
-				// this.saveAs.showDialog = true
-			},
+
+	const saveAsMenuItem: ExtendedMenuItem = {
+		label: 'Save as...',
+		icon: 'mdi mdi-content-save',
+		command: () => {
+			// this.saveAs.subFrame.width ||= this.imageInfo?.width ?? 0
+			// this.saveAs.subFrame.height ||= this.imageInfo?.height ?? 0
+			// this.saveAs.showDialog = true
 		},
+	}
+
+	const plateSolveMenuItem: ExtendedMenuItem = {
+		label: 'Plate Solve',
+		icon: 'mdi mdi-sigma',
+		command: () => {
+			// this.solver.showDialog = true
+		},
+	}
+
+	const stretchMenuItem: ExtendedMenuItem = {
+		label: 'Stretch',
+		icon: 'mdi mdi-chart-histogram',
+		command: () => {
+			// this.stretch.showDialog = true
+		},
+	}
+
+	const autoStretchMenuItem: ExtendedMenuItem = {
+		label: 'Auto stretch',
+		icon: 'mdi mdi-auto-fix',
+		selected: transformation.value.stretch.auto,
+		command: () => {
+			transformation.value.stretch.auto = !transformation.value.stretch.auto
+			autoStretchMenuItem.selected = transformation.value.stretch.auto
+			return reload()
+		},
+	}
+
+	const scnrMenuItem: ExtendedMenuItem = {
+		label: 'SCNR',
+		icon: 'mdi mdi-palette',
+		command: () => {
+			// this.scnr.showDialog = true
+		},
+	}
+
+	const debayerMenuItem: ExtendedMenuItem = {
+		label: 'Debayer',
+		icon: 'mdi mdi-collage',
+		selected: transformation.value.debayer,
+		command: () => {
+			transformation.value.debayer = !transformation.value.debayer
+			return reload()
+		},
+	}
+
+	const adjustmentMenuItem: ExtendedMenuItem = {
+		label: 'Adjustment',
+		icon: 'mdi mdi-palette',
+		command: () => {
+			// this.adjustment.showDialog = true
+		},
+	}
+
+	const horizontalMirrorMenuItem: ExtendedMenuItem = {
+		label: 'Horizontal mirror',
+		icon: 'mdi mdi-flip-horizontal',
+		selected: transformation.value.horizontalMirror,
+		command: () => {
+			transformation.value.horizontalMirror = !transformation.value.horizontalMirror
+			return reload()
+		},
+	}
+
+	const verticalMirrorMenuItem: ExtendedMenuItem = {
+		label: 'Vertical mirror',
+		icon: 'mdi mdi-flip-vertical',
+		selected: transformation.value.verticalMirror,
+		command: () => {
+			transformation.value.verticalMirror = !transformation.value.verticalMirror
+			return reload()
+		},
+	}
+
+	const invertMenuItem: ExtendedMenuItem = {
+		label: 'Invert',
+		icon: 'mdi mdi-invert-colors',
+		command: () => {
+			transformation.value.invert = !transformation.value.invert
+			return reload()
+		},
+	}
+
+	const rotateMenuItem: ExtendedMenuItem = {
+		label: 'Rotate',
+		icon: 'mdi mdi-rotate-right',
+		command: () => {
+			// this.rotation.showDialog = true
+		},
+	}
+
+	const transformationMenuItem: ExtendedMenuItem = {
+		label: 'Transformation',
+		icon: 'mdi mdi-image-edit',
+		items: [adjustmentMenuItem, horizontalMirrorMenuItem, verticalMirrorMenuItem, invertMenuItem, rotateMenuItem],
+	}
+
+	const contextMenuModel = ref<ExtendedMenuItem[]>([
+		saveAsMenuItem,
 		SEPARATOR_MENU_ITEM,
-		{
-			label: 'Plate Solve',
-			icon: 'mdi mdi-sigma',
-			command: () => {
-				// this.solver.showDialog = true
-			},
-		},
+		plateSolveMenuItem,
 		SEPARATOR_MENU_ITEM,
-		{
-			label: 'Stretch',
-			icon: 'mdi mdi-chart-histogram',
-			command: () => {
-				// this.stretch.showDialog = true
-			},
-		},
-		{
-			label: 'Auto stretch',
-			icon: 'mdi mdi-auto-fix',
-			selected: true,
-			command: () => {
-				// return this.toggleStretch()
-			},
-		},
-		{
-			label: 'SCNR',
-			icon: 'mdi mdi-palette',
-			disabled: true,
-			command: () => {
-				// this.scnr.showDialog = true
-			},
-		},
-		{
-			label: 'Debayer',
-			icon: 'mdi mdi-collage',
-			command: () => {
-				// this.transformation.debayer = !this.transformation.debayer
-				// this.debayerMenuItem.selected = this.transformation.debayer
-				// this.savePreference()
-				// return this.loadImage()
-			},
-		},
-		{
-			label: 'Transformation',
-			icon: 'mdi mdi-image-edit',
-			items: [
-				{
-					label: 'Adjustment',
-					icon: 'mdi mdi-palette',
-					command: () => {
-						// this.adjustment.showDialog = true
-					},
-				},
-				{
-					label: 'Horizontal mirror',
-					icon: 'mdi mdi-flip-horizontal',
-					command: () => {
-						// this.transformation.mirrorHorizontal = !this.transformation.mirrorHorizontal
-						// this.horizontalMirrorMenuItem.selected = this.transformation.mirrorHorizontal
-						// this.savePreference()
-						// return this.loadImage()
-					},
-				},
-				{
-					label: 'Vertical mirror',
-					icon: 'mdi mdi-flip-vertical',
-					command: () => {
-						// this.transformation.mirrorVertical = !this.transformation.mirrorVertical
-						// this.verticalMirrorMenuItem.selected = this.transformation.mirrorVertical
-						// this.savePreference()
-						// return this.loadImage()
-					},
-				},
-				{
-					label: 'Invert',
-					icon: 'mdi mdi-invert-colors',
-					command: () => {
-						// return this.invertImage()
-					},
-				},
-				{
-					label: 'Rotate',
-					icon: 'mdi mdi-rotate-right',
-					command: () => {
-						// this.rotation.showDialog = true
-					},
-				},
-			],
-		},
+		stretchMenuItem,
+		autoStretchMenuItem,
+		scnrMenuItem,
+		debayerMenuItem,
+		transformationMenuItem,
 		SEPARATOR_MENU_ITEM,
 		{
 			label: 'Overlay',
@@ -273,9 +294,9 @@
 				div.style.backfaceVisibility = 'hidden'
 
 				const image = document.createElement('img')
-				item = { image, info, wrapper: div, owner: wrapper.value! }
+				item = { image, path, camera, key, info, wrapper: div, owner: wrapper.value! }
 				image.onload = () => imageLoaded(item!)
-				image.oncontextmenu = (e) => contextMenu.value?.show(e)
+				image.oncontextmenu = (e) => showContextMenu(e, item!)
 				image.onpointerdown = () => imageClicked(item!)
 				image.classList.add('select-none', 'shadow-md')
 
@@ -289,6 +310,26 @@
 		}
 	}
 
+	async function reload() {
+		if (contextMenuLoadedImage) {
+			await open(contextMenuLoadedImage.path, contextMenuLoadedImage.camera)
+		}
+	}
+
+	function showContextMenu(e: Event, item: LoadedImage) {
+		const { info } = item
+
+		scnrMenuItem.disabled = info.mono
+		debayerMenuItem.disabled = !info.metatada.bayer && !info.mono
+		debayerMenuItem.selected = info.transformation.debayer
+		horizontalMirrorMenuItem.selected = info.transformation.horizontalMirror
+		verticalMirrorMenuItem.selected = info.transformation.verticalMirror
+		invertMenuItem.selected = info.transformation.invert
+
+		contextMenuLoadedImage = item
+		contextMenu.value?.show(e)
+	}
+
 	defineExpose({ open })
 </script>
 
@@ -299,7 +340,8 @@
 
 	<ContextMenu
 		ref="contextMenu"
-		:model="contextMenuItems"
+		:model="contextMenuModel"
+		@before-hide="contextMenuLoadedImage = undefined"
 		breakpoint="9999px">
 		<template #item="{ item, props }">
 			<MenuItem

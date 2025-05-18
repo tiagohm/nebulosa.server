@@ -1,5 +1,6 @@
 import { expect, test } from 'bun:test'
-import { type Framing, FramingService } from '../src/framing'
+import { FramingService } from '../src/framing'
+import type { Framing } from '../src/types'
 
 process.env.TZ = 'America/Sao_Paulo'
 
