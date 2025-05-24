@@ -122,19 +122,12 @@ export interface ImageScnr {
 	readonly method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
 }
 
-export interface ImageAdjustmentLevel {
-	readonly enabled: boolean
-	readonly value: number
-}
-
 export interface ImageAdjustment {
 	readonly enabled: boolean
-	readonly contrast: ImageAdjustmentLevel
-	readonly brightness: ImageAdjustmentLevel
-	readonly exposure: ImageAdjustmentLevel
-	readonly gamma: ImageAdjustmentLevel
-	readonly saturation: ImageAdjustmentLevel
-	readonly fade: ImageAdjustmentLevel
+	readonly normalize: boolean
+	readonly brightness: number
+	readonly gamma: number
+	readonly saturation: number
 }
 
 export interface ImageTransformation {
@@ -447,19 +440,12 @@ export const DEFAULT_IMAGE_SCNR: ImageScnr = {
 	method: 'MAXIMUM_MASK',
 }
 
-export const DEFAULT_IMAGE_ADJUSTMENT_LEVEL: ImageAdjustmentLevel = {
-	enabled: false,
-	value: 0,
-}
-
 export const DEFAULT_IMAGE_ADJUSTMENT: ImageAdjustment = {
 	enabled: false,
-	contrast: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
-	brightness: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
-	exposure: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
-	gamma: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
-	saturation: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
-	fade: DEFAULT_IMAGE_ADJUSTMENT_LEVEL,
+	normalize: false,
+	brightness: 1,
+	gamma: 1,
+	saturation: 1,
 }
 
 export const DEFAULT_IMAGE_TRANSFORMATION: ImageTransformation = {

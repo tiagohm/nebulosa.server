@@ -1,7 +1,7 @@
 import Elysia from 'elysia'
 import fs from 'fs/promises'
 import { readFits } from 'nebulosa/src/fits'
-import { type Image, type ImageFormat, adf, debayer, horizontalFlip, invert, readImageFromFits, stf, verticalFlip, writeImageToFormat } from 'nebulosa/src/image'
+import { type Image, type ImageFormat, type WriteImageToFormatOptions, adf, debayer, horizontalFlip, invert, readImageFromFits, scnr, stf, verticalFlip, writeImageToFormat } from 'nebulosa/src/image'
 import { fileHandleSource } from 'nebulosa/src/io'
 import os from 'os'
 import { join } from 'path'
@@ -58,6 +58,11 @@ export class ImageService {
 			image = verticalFlip(image)
 		}
 
+		if (transformation.scnr.channel) {
+			const { channel, amount, method } = transformation.scnr
+			image = scnr(image, channel, amount, method)
+		}
+
 		if (transformation.stretch.auto) {
 			const [midtone, shadow, highlight] = adf(image, undefined, transformation.stretch.meanBackground)
 
@@ -75,7 +80,17 @@ export class ImageService {
 			image = invert(image)
 		}
 
-		return writeImageToFormat(image, path, format as never) // TODO: Handle FITS and XISF
+		const { adjustment } = transformation
+
+		const options: WriteImageToFormatOptions = {
+			format: format === 'jpeg' ? { quality: 70, chromaSubsampling: '4:4:4' } : format === 'png' ? { effort: 1 } : undefined,
+			brightness: adjustment.enabled ? adjustment.brightness : undefined,
+			normalize: adjustment.enabled ? adjustment.normalize : undefined,
+			gamma: adjustment.enabled ? adjustment.gamma : undefined,
+			saturation: adjustment.enabled ? adjustment.saturation : undefined,
+		}
+
+		return writeImageToFormat(image, path, format as never, options) // TODO: Handle FITS and XISF
 	}
 
 	save() {}

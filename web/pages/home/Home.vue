@@ -5,7 +5,7 @@
 	import IconButton from '@/components/IconButton.vue'
 	import ImageViewer from '@/components/ImageViewer.vue'
 	import TextButton from '@/components/TextButton.vue'
-	import { openFilePicker } from '@/components/dialog'
+	import { filePicker } from '@/components/dialog'
 	import * as api from '@/shared/api'
 	import { useConnectionStore } from '@/stores/connection.store'
 	import { useStorage } from '@vueuse/core'
@@ -64,7 +64,7 @@
 	const imageOpenPath = useStorage('image.open.path', '')
 
 	async function openImage() {
-		const paths = await openFilePicker(dialog, { props: { header: 'Open Image' }, data: { path: imageOpenPath.value, filter: '*.{fits,fit,xisf}', mode: 'openFile' } })
+		const paths = await filePicker(dialog, { props: { header: 'Open Image' }, data: { path: imageOpenPath.value, filter: '*.{fits,fit,xisf}', mode: 'openFile' } })
 
 		if (paths?.length) {
 			imageOpenPath.value = paths[0]

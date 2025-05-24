@@ -1,30 +1,61 @@
 import type { BadgeProps } from 'primevue/badge'
 import type { ButtonProps } from 'primevue/button'
 import type { ContextMenuRouterBindProps } from 'primevue/contextmenu'
+import type { DynamicDialogInstance, DynamicDialogOptions } from 'primevue/dynamicdialogoptions'
 import type { InputNumberProps } from 'primevue/inputnumber'
 import type { InputTextProps } from 'primevue/inputtext'
+import type { ImageTransformation, ListDirectory } from '../../src/types'
+
+// Dialog
+
+export interface DynamicDialogOptionsWithData<T> extends DynamicDialogOptions {
+	data?: T
+}
+
+export interface DynamicDialogOpener {
+	readonly open: (content: unknown, options?: DynamicDialogOptions) => DynamicDialogInstance
+}
+
+export type FilePickerMode = 'openFile' | 'openDirectory' | 'save'
+
+export interface FilePickerData extends ListDirectory {
+	readonly multiple?: boolean
+	readonly mode?: FilePickerMode
+}
+
+export interface SaveAsData extends Omit<ListDirectory, 'directoryOnly'> {
+	readonly filename?: string
+	readonly transformation?: ImageTransformation
+}
+
+// Components
 
 export interface ConnectButtonProps extends /* @vue-ignore */ ButtonProps {
-	connected: boolean
+	readonly connected: boolean
 }
 
 export interface FloatInputTextProps extends /* @vue-ignore */ InputTextProps {
-	label: string
+	readonly label: string
 }
 
 export interface FloatInputNumberProps extends /* @vue-ignore */ InputNumberProps {
-	label: string
+	readonly label: string
 }
 
 export interface IconButtonProps extends /* @vue-ignore */ Omit<ButtonProps, 'icon' | 'rounded' | 'text' | 'size'> {
-	icon: string
+	readonly icon: string
 }
 
 export interface TextButtonProps extends /* @vue-ignore */ Omit<ButtonProps, 'icon' | 'rounded' | 'text' | 'size'> {
-	icon: string
+	readonly icon: string
 }
 
-// biome-ignore lint/suspicious/noEmptyInterface:
+export interface PathInputProps extends FilePickerData {
+	readonly key: string
+	readonly label?: string
+}
+
+// biome-ignore lint/suspicious/noEmptyInterface: <explanation>
 export interface ImageViewerProps {}
 
 export interface ExtendedMenuItemCommandEvent {

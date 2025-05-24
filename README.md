@@ -15,13 +15,19 @@ To install dependencies:
 bun i
 ```
 
-To run:
+To run the server:
 
 ```bash
-bun run main.ts --port 3000
+bun serve
 ```
 
-To run in development mode:
+To run the web application:
+
+```bash
+bun web
+```
+
+To run the server + web application:
 
 ```bash
 bun dev

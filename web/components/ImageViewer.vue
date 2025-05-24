@@ -2,9 +2,11 @@
 	import { openImage } from '@/shared/api'
 	import { PanZoom, type PanZoomOptions } from '@/shared/pan-zoom'
 	import { useStorage } from '@vueuse/core'
+	import { useDialog } from 'primevue/usedialog'
 	import { ref, useTemplateRef } from 'vue'
 	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo, type ImageTransformation } from '../../src/types'
 	import MenuItem from './MenuItem.vue'
+	import { saveAs } from './dialog'
 	import { type ExtendedMenuItem, type ImageViewerProps, SEPARATOR_MENU_ITEM } from './types'
 
 	defineProps<ImageViewerProps>()
@@ -26,6 +28,7 @@
 
 	let contextMenuLoadedImage: LoadedImage | undefined
 	const contextMenu = useTemplateRef('contextMenu')
+	const dialog = useDialog()
 
 	const saveAsMenuItem: ExtendedMenuItem = {
 		label: 'Save as...',
@@ -34,6 +37,7 @@
 			// this.saveAs.subFrame.width ||= this.imageInfo?.width ?? 0
 			// this.saveAs.subFrame.height ||= this.imageInfo?.height ?? 0
 			// this.saveAs.showDialog = true
+			saveAs(dialog)
 		},
 	}
 
@@ -341,7 +345,6 @@
 	<ContextMenu
 		ref="contextMenu"
 		:model="contextMenuModel"
-		@before-hide="contextMenuLoadedImage = undefined"
 		breakpoint="9999px">
 		<template #item="{ item, props }">
 			<MenuItem

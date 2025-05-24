@@ -1,29 +1,9 @@
-import type { DynamicDialogInstance, DynamicDialogOptions } from 'primevue/dynamicdialogoptions'
 import { defineAsyncComponent } from 'vue'
-import type { ListDirectory } from '../../src/types'
+import type { DynamicDialogOpener, DynamicDialogOptionsWithData, FilePickerData, SaveAsData } from './types'
 
-export interface DynamicDialogOpener {
-	open: (content: unknown, options?: DynamicDialogOptions) => DynamicDialogInstance
-}
-
-// File Chooser
-
-export type FilePickerMode = 'openFile' | 'openDirectory' | 'save'
-
-export interface FilePickerData extends ListDirectory {
-	readonly multiple?: boolean
-	readonly mode?: FilePickerMode
-}
-
-export interface FilePickerOptions extends DynamicDialogOptions {
-	readonly data?: FilePickerData
-}
-
-const FilePicker = defineAsyncComponent(() => import('./FilePicker.vue'))
-
-export function openFilePicker(dialog: DynamicDialogOpener, options?: FilePickerOptions) {
-	return new Promise<string[] | undefined>((resolve) => {
-		dialog.open(FilePicker, {
+export function openDialog<T>(dialog: DynamicDialogOpener, content: unknown, options?: DynamicDialogOptionsWithData<unknown>) {
+	return new Promise<T>((resolve) => {
+		dialog.open(content, {
 			...options,
 			props: { ...options?.props, modal: true },
 			onClose: (result) => {
@@ -32,4 +12,20 @@ export function openFilePicker(dialog: DynamicDialogOpener, options?: FilePicker
 			},
 		})
 	})
+}
+
+// File Picker
+
+export const FilePicker = defineAsyncComponent(() => import('./FilePicker.vue'))
+
+export function filePicker(dialog: DynamicDialogOpener, options?: DynamicDialogOptionsWithData<FilePickerData>) {
+	return openDialog<string[] | undefined>(dialog, FilePicker, options)
+}
+
+// Save As
+
+export const SaveAs = defineAsyncComponent(() => import('./SaveAs.vue'))
+
+export function saveAs(dialog: DynamicDialogOpener, options?: DynamicDialogOptionsWithData<SaveAsData>) {
+	return openDialog<string | undefined>(dialog, SaveAs, { ...options, props: { ...options?.props, header: options?.props?.header || 'Save As' }, data: { ...options?.data, mode: 'save' } })
 }
