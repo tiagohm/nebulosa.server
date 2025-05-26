@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import type { FloatInputTextProps } from './types'
+	import type { FloatInputTextProps } from '@/shared/types'
 
 	defineProps<FloatInputTextProps>()
 </script>

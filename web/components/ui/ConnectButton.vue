@@ -1,6 +1,6 @@
 <script setup lang="ts">
-	import IconButton from './IconButton.vue'
-	import type { ConnectButtonProps } from './types'
+	import IconButton from '@/components/ui/IconButton.vue'
+	import type { ConnectButtonProps } from '@/shared/types'
 
 	defineProps<ConnectButtonProps>()
 </script>

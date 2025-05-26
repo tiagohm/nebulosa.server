@@ -1,14 +1,14 @@
 <script setup lang="ts">
+	import FloatInputText from '@/components/ui/FloatInputText.vue'
+	import IconButton from '@/components/ui/IconButton.vue'
+	import TextButton from '@/components/ui/TextButton.vue'
 	import { createDirectory, listDirectory } from '@/shared/api'
+	import type { FilePickerData } from '@/shared/types'
 	import { formatDateTime } from '@/shared/utils'
 	import type { DynamicDialogInstance } from 'primevue/dynamicdialogoptions'
 	import type { MenuItem } from 'primevue/menuitem'
 	import { type Ref, inject, onMounted, ref, toRaw } from 'vue'
 	import type { FileEntry } from '../../src/types'
-	import FloatInputText from './FloatInputText.vue'
-	import IconButton from './IconButton.vue'
-	import TextButton from './TextButton.vue'
-	import type { FilePickerData } from './types'
 
 	const dialog = inject<Ref<DynamicDialogInstance>>('dialogRef')!
 	const data = ref<FilePickerData>()

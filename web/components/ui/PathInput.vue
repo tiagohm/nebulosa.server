@@ -1,10 +1,10 @@
 <script lang="ts" setup>
+	import FloatInputText from '@/components/ui/FloatInputText.vue'
+	import IconButton from '@/components/ui/IconButton.vue'
+	import { filePicker } from '@/shared/dialog'
+	import type { PathInputProps } from '@/shared/types'
 	import { useStorage } from '@vueuse/core'
 	import { useDialog } from 'primevue/usedialog'
-	import FloatInputText from './FloatInputText.vue'
-	import IconButton from './IconButton.vue'
-	import { filePicker } from './dialog'
-	import type { PathInputProps } from './types'
 
 	const props = defineProps<PathInputProps>()
 	const path = useStorage<string>(`pathInput.${props.key}.path`, props.path || '')

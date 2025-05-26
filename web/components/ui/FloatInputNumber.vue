@@ -1,6 +1,6 @@
 <script setup lang="ts">
+	import type { FloatInputNumberProps } from '@/shared/types'
 	import { useTemplateRef } from 'vue'
-	import type { FloatInputNumberProps } from './types'
 
 	defineProps<FloatInputNumberProps>()
 
@@ -17,10 +17,10 @@
 
 		const increment = step ?? 1
 		const direction = -Math.sign(delta)
-		const newValue = value + increment * direction
+		const nextValue = value + increment * direction
 
-		if (newValue !== value) {
-			if ((min === undefined || newValue >= min) && (max === undefined || newValue <= max)) {
+		if (nextValue !== value) {
+			if ((min === undefined || nextValue >= min) && (max === undefined || nextValue <= max)) {
 				// biome-ignore lint/suspicious/noExplicitAny:
 				;(input.value as any).spin(event, direction)
 			}

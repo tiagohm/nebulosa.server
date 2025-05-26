@@ -1,5 +1,5 @@
 <script setup lang="ts">
-	import type { TextButtonProps } from './types'
+	import type { TextButtonProps } from '@/shared/types'
 
 	defineProps<TextButtonProps>()
 </script>

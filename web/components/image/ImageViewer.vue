@@ -1,13 +1,13 @@
 <script setup lang="ts">
+	import MenuItem from '@/components/ui/MenuItem.vue'
 	import { openImage } from '@/shared/api'
+	import { saveImage } from '@/shared/dialog'
 	import { PanZoom, type PanZoomOptions } from '@/shared/pan-zoom'
+	import { type ExtendedMenuItem, type ImageViewerProps, SEPARATOR_MENU_ITEM } from '@/shared/types'
 	import { useStorage } from '@vueuse/core'
 	import { useDialog } from 'primevue/usedialog'
 	import { ref, useTemplateRef } from 'vue'
-	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo, type ImageTransformation } from '../../src/types'
-	import MenuItem from './MenuItem.vue'
-	import { saveAs } from './dialog'
-	import { type ExtendedMenuItem, type ImageViewerProps, SEPARATOR_MENU_ITEM } from './types'
+	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo, type ImageTransformation } from '../../../src/types'
 
 	defineProps<ImageViewerProps>()
 
@@ -31,13 +31,13 @@
 	const dialog = useDialog()
 
 	const saveAsMenuItem: ExtendedMenuItem = {
-		label: 'Save as...',
+		label: 'Save...',
 		icon: 'mdi mdi-content-save',
 		command: () => {
 			// this.saveAs.subFrame.width ||= this.imageInfo?.width ?? 0
 			// this.saveAs.subFrame.height ||= this.imageInfo?.height ?? 0
 			// this.saveAs.showDialog = true
-			saveAs(dialog)
+			saveImage(dialog)
 		},
 	}
 

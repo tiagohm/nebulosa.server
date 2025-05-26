@@ -1,6 +1,6 @@
 <script setup lang="ts">
-	import ConnectButton from '@/components/ConnectButton.vue'
-	import IconButton from '@/components/IconButton.vue'
+	import ConnectButton from '@/components/ui/ConnectButton.vue'
+	import IconButton from '@/components/ui/IconButton.vue'
 	import { formatDateTime } from '@/shared/utils'
 	import { useConnectionStore } from '@/stores/connection.store'
 

@@ -23,7 +23,7 @@ export interface FilePickerData extends ListDirectory {
 	readonly mode?: FilePickerMode
 }
 
-export interface SaveAsData extends Omit<ListDirectory, 'directoryOnly'> {
+export interface SaveImageData extends Omit<ListDirectory, 'directoryOnly'> {
 	readonly filename?: string
 	readonly transformation?: ImageTransformation
 }
