@@ -38,7 +38,7 @@
 		"@vitejs/plugin-vue": "5.2.4",
 		"@vue/tsconfig": "0.7.0",
 		"@vueuse/core": "13.2.0",
-		"npm-run-all2": "8.0.3",
+		"npm-run-all2": "8.0.4",
 		"pinia": "3.0.2",
 		"prettier": "latest",
 		"prettier-plugin-tailwindcss": "latest",
