@@ -46,9 +46,9 @@
 		"tailwindcss": "4.1.7",
 		"tailwindcss-primeui": "0.6.1",
 		"typescript": "5.8.3",
-		"unplugin-vue-components": "28.5.0",
+		"unplugin-vue-components": "28.7.0",
 		"vite": "6.3.5",
-		"vue": "3.5.14"
+		"vue": "3.5.15"
 	},
 	"trustedDependencies": ["@biomejs/biome", "@tailwindcss/oxide", "esbuild", "nebulosa", "sharp"]
 }
