@@ -1,6 +1,18 @@
-import Elysia from 'elysia'
+import Elysia, { t, type Static } from 'elysia'
 import { IndiClient, type IndiClientHandler } from 'nebulosa/src/indi'
-import type { Connect, ConnectionStatus } from './types'
+
+const ConnectBody = t.Object({
+	host: t.String(),
+	port: t.Integer(),
+	type: t.Union([t.Literal('INDI')]),
+})
+
+export type Connect = Static<typeof ConnectBody>
+
+export interface ConnectionStatus extends Connect {
+	readonly id: string
+	readonly ip?: string
+}
 
 export class ConnectionService {
 	private readonly clients = new Map<string, IndiClient>()
@@ -60,28 +72,14 @@ export class ConnectionService {
 	list() {
 		return Array.from(this.clients.values())
 			.map((e) => this.status(e))
-			.filter(Boolean)
+			.filter((e) => !!e)
 	}
 }
 
 export function connection(connectionService: ConnectionService, indiClientHandler: IndiClientHandler) {
-	const app = new Elysia({ prefix: '/connections' })
-
-	app.get('/', () => {
-		return connectionService.list()
-	})
-
-	app.post('/', async ({ body }) => {
-		return await connectionService.connect(body as never, indiClientHandler)
-	})
-
-	app.get('/:id', ({ params }) => {
-		return connectionService.status(params.id)
-	})
-
-	app.delete('/:id', ({ params }) => {
-		connectionService.disconnect(params.id)
-	})
-
-	return app
+	return new Elysia({ prefix: '/connections' })
+		.get('/', () => connectionService.list())
+		.post('/', async ({ body }) => await connectionService.connect(body, indiClientHandler), { body: ConnectBody })
+		.get('/:id', ({ params }) => connectionService.status(params.id))
+		.delete('/:id', ({ params }) => connectionService.disconnect(params.id))
 }

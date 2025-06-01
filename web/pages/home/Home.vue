@@ -41,7 +41,7 @@
 	// Choose the active connection if it exists
 	async function chooseActiveConnection() {
 		// Fetch the available connections
-		const statuses = await api.connections()
+		const { data: statuses } = await api.connections()
 
 		if (statuses) {
 			// Find the active connection and choose it

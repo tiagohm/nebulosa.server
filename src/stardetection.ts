@@ -1,9 +1,20 @@
-import Elysia from 'elysia'
+import Elysia, { t, type Static } from 'elysia'
 import { astapDetectStars } from 'nebulosa/src/astap'
-import type { StarDetection } from './types'
+
+const DetectStarsBody = t.Object({
+	type: t.Union([t.Literal('ASTAP')]),
+	executable: t.Optional(t.String()),
+	path: t.String(),
+	timeout: t.Integer(),
+	minSNR: t.Integer(),
+	maxStars: t.Integer(),
+	slot: t.Integer(),
+})
+
+export type DetectStars = Static<typeof DetectStarsBody>
 
 export class StarDetectionService {
-	async detectStars(req: StarDetection) {
+	async detectStars(req: DetectStars) {
 		if (req.type === 'ASTAP') {
 			return await astapDetectStars(req.path, req)
 		}
@@ -13,11 +24,9 @@ export class StarDetectionService {
 }
 
 export function starDetection(starDetectionService: StarDetectionService) {
-	const app = new Elysia({ prefix: '/star-detection' })
-
-	app.post('/', ({ body }) => {
-		return starDetectionService.detectStars(body as never)
-	})
-
-	return app
+	return (
+		new Elysia({ prefix: '/starDetection' })
+			// Star Detection
+			.post('/', ({ body }) => starDetectionService.detectStars(body), { body: DetectStarsBody })
+	)
 }

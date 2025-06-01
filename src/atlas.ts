@@ -1,34 +1,49 @@
-import Elysia from 'elysia'
+import Elysia, { type Static, t } from 'elysia'
 import { type Angle, deg, parseAngle } from 'nebulosa/src/angle'
 import { AU_KM, SPEED_OF_LIGHT } from 'nebulosa/src/constants'
 import type { CsvRow } from 'nebulosa/src/csv'
 import { type DateTime, dateFrom } from 'nebulosa/src/datetime'
 import { type Distance, meter } from 'nebulosa/src/distance'
 import { Quantity, observer } from 'nebulosa/src/horizons'
-import type { AltitudeChartOfBody, BodyPosition, PositionOfBody } from './types'
+import type { BodyPosition } from './types'
 
 const HORIZONS_QUANTITIES: Quantity[] = [Quantity.ASTROMETRIC_RA_DEC, Quantity.APPARENT_RA_DEC, Quantity.APPARENT_AZ_EL, Quantity.VISUAL_MAG_SURFACE_BRGHT, Quantity.ONE_WAY_DOWN_LEG_LIGHT_TIME, Quantity.ILLUMINATED_FRACTION, Quantity.SUN_OBSERVER_TARGET_ELONG_ANGLE, Quantity.CONSTELLATION_ID]
+
+const ComputePositionBody = t.Object({
+	dateTime: t.String(),
+	longitude: t.Number(),
+	latitude: t.Number(),
+	elevation: t.Number(),
+})
+
+const AltitudeChartBody = t.Object({
+	dateTime: t.String(),
+	stepSize: t.Integer(),
+})
+
+export type ComputePosition = Static<typeof ComputePositionBody>
+export type AltitudeChart = Static<typeof AltitudeChartBody>
 
 export class AtlasService {
 	private readonly positions = new Map<string, Map<number, Readonly<BodyPosition>>>()
 
 	imageOfSun() {}
 
-	positionOfSun(req: PositionOfBody) {
+	positionOfSun(req: ComputePosition) {
 		return this.computeEphemeris('10', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 	}
 
-	altitudeChartOfSun(req: AltitudeChartOfBody) {
+	altitudeChartOfSun(req: AltitudeChart) {
 		return this.computeAltitudeChart('10', dateFrom(req.dateTime, true), req.stepSize)
 	}
 
 	earthSeasons() {}
 
-	positionOfMoon(req: PositionOfBody) {
+	positionOfMoon(req: ComputePosition) {
 		return this.computeEphemeris('301', dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 	}
 
-	altitudeChartOfMoon(req: AltitudeChartOfBody) {
+	altitudeChartOfMoon(req: AltitudeChart) {
 		return this.computeAltitudeChart('301', dateFrom(req.dateTime, true), req.stepSize)
 	}
 
@@ -36,11 +51,11 @@ export class AtlasService {
 
 	twilight() {}
 
-	positionOfPlanet(code: string, req: PositionOfBody) {
+	positionOfPlanet(code: string, req: ComputePosition) {
 		return this.computeEphemeris(code, dateFrom(req.dateTime, true), deg(req.longitude), deg(req.latitude), meter(req.elevation))
 	}
 
-	altitudeChartOfPlanet(code: string, req: AltitudeChartOfBody) {
+	altitudeChartOfPlanet(code: string, req: AltitudeChart) {
 		return this.computeAltitudeChart(code, dateFrom(req.dateTime, true), req.stepSize)
 	}
 
@@ -52,15 +67,15 @@ export class AtlasService {
 
 	skyObjectTypes() {}
 
-	positionOfSkyObject(req: PositionOfBody, id: string) {}
+	positionOfSkyObject(req: ComputePosition, id: string) {}
 
-	altitudeChartOfSkyObject(req: AltitudeChartOfBody) {}
+	altitudeChartOfSkyObject(req: AltitudeChart) {}
 
 	searchSatellites() {}
 
-	positionOfSatellite(req: PositionOfBody, id: string) {}
+	positionOfSatellite(req: ComputePosition, id: string) {}
 
-	altitudeChartOfSatellite(req: AltitudeChartOfBody) {}
+	altitudeChartOfSatellite(req: AltitudeChart) {}
 
 	private async computeEphemeris(code: string, dateTime: DateTime, longitude: number, latitude: Angle, elevation: Distance) {
 		const time = timeWithoutSeconds(dateTime)
@@ -157,31 +172,11 @@ function timeWithoutSeconds(dateTime: DateTime) {
 // '/satellites/:id/altitude-chart'
 
 export function atlas(atlasService: AtlasService) {
-	const app = new Elysia({ prefix: '/atlas' })
-
-	app.post('/sun/position', ({ body }) => {
-		return atlasService.positionOfSun(body as never)
-	})
-
-	app.post('/sun/altitude-chart', ({ body }) => {
-		return atlasService.altitudeChartOfSun(body as never)
-	})
-
-	app.post('/moon/position', ({ body }) => {
-		return atlasService.positionOfMoon(body as never)
-	})
-
-	app.post('/moon/altitude-chart', ({ body }) => {
-		return atlasService.altitudeChartOfMoon(body as never)
-	})
-
-	app.post('/planets/:code/position', ({ params, body }) => {
-		return atlasService.positionOfPlanet(params.code, body as never)
-	})
-
-	app.post('/planets/:code/altitude-chart', ({ params, body }) => {
-		return atlasService.altitudeChartOfPlanet(params.code, body as never)
-	})
-
-	return app
+	return new Elysia({ prefix: '/atlas' })
+		.post('/sun/position', ({ body }) => atlasService.positionOfSun(body), { body: ComputePositionBody })
+		.post('/sun/altitudeChart', ({ body }) => atlasService.altitudeChartOfSun(body), { body: AltitudeChartBody })
+		.post('/moon/position', ({ body }) => atlasService.positionOfMoon(body), { body: ComputePositionBody })
+		.post('/moon/altitudeChart', ({ body }) => atlasService.altitudeChartOfMoon(body), { body: AltitudeChartBody })
+		.post('/planets/:code/position', ({ params, body }) => atlasService.positionOfPlanet(params.code, body), { body: ComputePositionBody })
+		.post('/planets/:code/altitudeChart', ({ params, body }) => atlasService.altitudeChartOfPlanet(params.code, body), { body: AltitudeChartBody })
 }

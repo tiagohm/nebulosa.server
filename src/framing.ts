@@ -1,8 +1,19 @@
-import Elysia from 'elysia'
+import Elysia, { t, type Static } from 'elysia'
 import { deg, parseAngle } from 'nebulosa/src/angle'
 import { hips2Fits } from 'nebulosa/src/hips2fits'
 import hipsSurveys from '../data/hips-surveys.json' with { type: 'json' }
-import type { Framing } from './types'
+
+const FramingBody = t.Object({
+	hipsSurvey: t.String(),
+	rightAscension: t.Union([t.String(), t.Number()]),
+	declination: t.Union([t.String(), t.Number()]),
+	width: t.Number(),
+	height: t.Number(),
+	fov: t.Number(), // deg
+	rotation: t.Number(), // deg
+})
+
+export type Framing = Static<typeof FramingBody>
 
 export class FramingService {
 	frame(req: Framing) {
@@ -15,9 +26,9 @@ export class FramingService {
 }
 
 export function framing(framingService: FramingService) {
-	const app = new Elysia({ prefix: '/framing' })
-
-	app.get('/hips-surveys', hipsSurveys)
-
-	return app
+	return (
+		new Elysia({ prefix: '/framing' })
+			// Framing
+			.get('/hipsSurveys', hipsSurveys)
+	)
 }

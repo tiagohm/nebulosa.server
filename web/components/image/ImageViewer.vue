@@ -7,7 +7,8 @@
 	import { useStorage } from '@vueuse/core'
 	import { useDialog } from 'primevue/usedialog'
 	import { ref, useTemplateRef } from 'vue'
-	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo, type ImageTransformation } from '../../../src/types'
+	import type { ImageTransformation } from '../../../src/image'
+	import { type Camera, DEFAULT_IMAGE_TRANSFORMATION, type ImageInfo } from '../../../src/types'
 
 	defineProps<ImageViewerProps>()
 

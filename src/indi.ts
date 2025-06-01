@@ -729,7 +729,7 @@ export function thermometers(indiService: IndiService) {
 }
 
 export function guideOutputs(indiService: IndiService, connectionService: ConnectionService) {
-	const app = new Elysia({ prefix: '/guide-outputs' })
+	const app = new Elysia({ prefix: '/guideOutputs' })
 
 	app.get('/', () => {
 		return indiService.guideOutputs()

@@ -84,7 +84,7 @@ export const useConnectionStore = defineStore('connection', () => {
 		} else {
 			connecting.value = true
 
-			const status = await connect(current.value)
+			const { data: status } = await connect(current.value)
 
 			if (status) {
 				connected.value = true

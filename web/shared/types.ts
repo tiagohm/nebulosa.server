@@ -4,7 +4,8 @@ import type { ContextMenuRouterBindProps } from 'primevue/contextmenu'
 import type { DynamicDialogInstance, DynamicDialogOptions } from 'primevue/dynamicdialogoptions'
 import type { InputNumberProps } from 'primevue/inputnumber'
 import type { InputTextProps } from 'primevue/inputtext'
-import type { ImageTransformation, ListDirectory } from '../../src/types'
+import type { ListDirectory } from '../../src/file-system'
+import type { ImageTransformation } from '../../src/types'
 
 // Dialog
 

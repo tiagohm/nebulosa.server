@@ -1,22 +1,12 @@
 import type { Angle } from 'nebulosa/src/angle'
 import type { FitsHeader } from 'nebulosa/src/fits'
-import type { CfaPattern, ImageChannel, ImageMetadata } from 'nebulosa/src/image'
+import type { CfaPattern, ImageFormat, ImageMetadata } from 'nebulosa/src/image'
 import type { PropertyState } from 'nebulosa/src/indi'
-import type { Parity, PlateSolution, PlateSolveOptions } from 'nebulosa/src/platesolver'
+import type { PlateSolution } from 'nebulosa/src/platesolver'
+import type { ConnectionStatus } from './connection'
+import type { ImageAdjustment, ImageScnr, ImageStretch, ImageTransformation } from './image'
 
 // Atlas
-
-export interface PositionOfBody {
-	readonly dateTime: string
-	readonly longitude: number
-	readonly latitude: number
-	readonly elevation: number
-}
-
-export interface AltitudeChartOfBody {
-	readonly dateTime: string
-	readonly stepSize: number
-}
 
 export interface BodyPosition {
 	readonly rightAscensionJ2000: number
@@ -34,48 +24,7 @@ export interface BodyPosition {
 	readonly leading: boolean
 }
 
-// Confirmation
-
-export interface Confirm {
-	readonly key: string
-	readonly accepted: boolean
-}
-
-export interface Confirmation extends WebSocketMessage {
-	readonly type: 'CONFIRMATION'
-	readonly key: string
-	readonly message: string
-}
-
-// Connection
-
-export type ConnectionType = 'INDI' | 'ALPACA'
-
-export interface Connect {
-	readonly host: string
-	readonly port: number
-	readonly type: ConnectionType
-}
-
-export interface ConnectionStatus extends Connect {
-	readonly id: string
-	readonly ip?: string
-}
-
 // File System
-
-export interface ListDirectory {
-	readonly path?: string
-	readonly filter?: string
-	readonly directoryOnly?: boolean
-}
-
-export interface CreateDirectory {
-	readonly path: string
-	readonly name: string
-	readonly recursive?: boolean | undefined
-	readonly mode?: string | number | undefined
-}
 
 export interface DirectoryEntry {
 	readonly name: string
@@ -94,69 +43,12 @@ export interface FileSystem {
 	readonly entries: FileEntry[]
 }
 
-// Framing
-
-export interface Framing {
-	readonly hipsSurvey: string
-	readonly rightAscension: string | Angle
-	readonly declination: string | Angle
-	readonly width: number
-	readonly height: number
-	fov: number // deg
-	rotation: number // deg
-}
-
-// Image
-
-export interface ImageStretch {
-	auto: boolean
-	shadow: number // 0 - 65536
-	highlight: number // 0 - 65536
-	midtone: number // 0 - 65536
-	meanBackground?: number
-}
-
-export interface ImageScnr {
-	readonly channel?: ImageChannel
-	readonly amount: number
-	readonly method: 'MAXIMUM_MASK' | 'ADDITIVE_MASK' | 'AVERAGE_NEUTRAL' | 'MAXIMUM_NEUTRAL' | 'MINIMUM_NEUTRAL'
-}
-
-export interface ImageAdjustment {
-	readonly enabled: boolean
-	readonly normalize: boolean
-	readonly brightness: number
-	readonly gamma: number
-	readonly saturation: number
-}
-
-export interface ImageTransformation {
-	readonly calibrationGroup?: string
-	debayer: boolean
-	readonly stretch: ImageStretch
-	horizontalMirror: boolean
-	verticalMirror: boolean
-	invert: boolean
-	readonly scnr: ImageScnr
-	readonly useJPEG: boolean
-	readonly adjustment: ImageAdjustment
-}
-
-export interface OpenImage {
-	readonly path?: string
-	readonly camera?: string
-	readonly transformation: ImageTransformation
-}
-
-export interface CloseImage {
-	readonly id: string
-}
-
 export interface ImageInfo {
 	readonly path: string
 	readonly width: number
 	readonly height: number
 	readonly mono: boolean
+	readonly format: Exclude<ImageFormat, 'fits' | 'xisf'>
 	readonly metatada: ImageMetadata
 	readonly transformation: ImageTransformation
 	readonly rightAscension?: Angle
@@ -259,73 +151,6 @@ export interface Camera extends GuideOutput, Thermometer {
 export interface GuidePulse {
 	readonly direction: GuideDirection
 	readonly duration: number
-}
-
-// Message
-
-export interface WebSocketMessage {
-	readonly type: string
-}
-
-// Notification
-
-export type Severity = 'info' | 'success' | 'warn' | 'error'
-
-export interface Notification extends WebSocketMessage {
-	readonly type: 'NOTIFICATION'
-	readonly target?: string
-	readonly severity?: Severity
-	readonly title?: string
-	readonly body: string
-}
-
-// Plate Solver
-
-export type PlateSolverType = 'ASTAP' | 'PIXINSIGHT' | 'ASTROMETRY_NET' | 'NOVA_ASTROMETRY_NET' | 'SIRIL'
-
-export interface PlateSolveStart extends Omit<Readonly<PlateSolveOptions>, 'ra' | 'dec'> {
-	readonly id: string
-	readonly type: PlateSolverType
-	readonly executable: string
-	readonly path: string
-	readonly focalLength: number
-	readonly pixelSize: number
-	readonly apiUrl?: string
-	readonly apiKey?: string
-	readonly slot?: number
-	readonly blind: boolean
-	readonly ra: string | number // hours
-	readonly dec: string | number // deg
-}
-
-export interface PlateSolveStop {
-	readonly id: string
-}
-
-export interface PlateSolved {
-	readonly solved: boolean
-	readonly orientation?: number
-	readonly scale?: number
-	readonly rightAscension?: Angle
-	readonly declination?: Angle
-	readonly width?: number
-	readonly height?: number
-	readonly radius?: number
-	readonly parity?: Parity
-}
-
-// Star Detection
-
-export type StarDetectionType = 'ASTAP'
-
-export interface StarDetection {
-	readonly type: StarDetectionType
-	readonly executable?: string
-	readonly path: string
-	readonly timeout: number
-	readonly minSNR: number
-	readonly maxStars: number
-	readonly slot: number
 }
 
 // Misc

@@ -1,8 +1,18 @@
-import Elysia from 'elysia'
-import type { WebSocketMessageHandler } from './message'
-import type { Confirm, Confirmation } from './types'
+import Elysia, { t, type Static } from 'elysia'
+import type { WebSocketMessage, WebSocketMessageHandler } from './message'
 
-const CONFIRMATION_TYPE = 'CONFIRMATION'
+const ConfirmBody = t.Object({
+	key: t.String(),
+	accepted: t.Boolean(),
+})
+
+export type Confirm = Static<typeof ConfirmBody>
+
+export interface Confirmation extends WebSocketMessage {
+	readonly type: 'CONFIRMATION'
+	readonly key: string
+	readonly message: string
+}
 
 export class ConfirmationService {
 	private readonly confirmations = new Map<string, (value: boolean) => void>()
@@ -16,7 +26,7 @@ export class ConfirmationService {
 	ask(message: Omit<Confirmation, 'type'>, timeout: number = 30000) {
 		const confirmation = new Promise<boolean>((resolve) => {
 			this.confirmations.set(message.key, resolve)
-			this.webSocketMessageHandler.send<Confirmation>({ ...message, type: CONFIRMATION_TYPE })
+			this.webSocketMessageHandler.send<Confirmation>({ ...message, type: 'CONFIRMATION' })
 			setTimeout(() => resolve(false), timeout)
 		})
 
@@ -25,11 +35,9 @@ export class ConfirmationService {
 }
 
 export function confirmation(confirmationService: ConfirmationService) {
-	const app = new Elysia({ prefix: '/confirmation' })
-
-	app.post('/', ({ body }) => {
-		confirmationService.confirm(body as never)
-	})
-
-	return app
+	return (
+		new Elysia({ prefix: '/confirmation' })
+			// Confirmation
+			.post('/', ({ body }) => confirmationService.confirm(body), { body: ConfirmBody })
+	)
 }

@@ -1,4 +1,4 @@
-import type { Connect, ConnectionStatus } from '../src/types'
+import type { Connect, ConnectionStatus } from '../src/connection'
 
 export interface Connection extends Connect {
 	id: number

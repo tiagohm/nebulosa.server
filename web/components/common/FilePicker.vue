@@ -8,7 +8,7 @@
 	import type { DynamicDialogInstance } from 'primevue/dynamicdialogoptions'
 	import type { MenuItem } from 'primevue/menuitem'
 	import { type Ref, inject, onMounted, ref, toRaw } from 'vue'
-	import type { FileEntry } from '../../src/types'
+	import type { FileEntry } from '../../../src/types'
 
 	const dialog = inject<Ref<DynamicDialogInstance>>('dialogRef')!
 	const data = ref<FilePickerData>()
@@ -22,7 +22,7 @@
 	const result = ref<string[]>([])
 
 	async function open(path?: string) {
-		const directory = await listDirectory({ filter: data.value?.filter, path, directoryOnly: data.value?.mode === 'openDirectory' })
+		const { data: directory } = await listDirectory({ filter: data.value?.filter, path, directoryOnly: data.value?.mode === 'openDirectory' })
 
 		if (directory) {
 			currentPath.value = directory.path
@@ -60,9 +60,9 @@
 	}
 
 	async function createFolder() {
-		const path = await createDirectory({ name: createFolderDialog.value.name.trim(), path: currentPath.value })
+		const { data } = await createDirectory({ name: createFolderDialog.value.name.trim(), path: currentPath.value })
 
-		if (path) {
+		if (data) {
 			createFolderDialog.value.show = false
 			refresh()
 		}

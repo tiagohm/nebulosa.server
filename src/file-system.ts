@@ -1,9 +1,25 @@
 import { Glob } from 'bun'
-import Elysia from 'elysia'
+import Elysia, { t, type Static } from 'elysia'
 import fs from 'fs/promises'
 import os from 'os'
 import { basename, dirname, join } from 'path'
-import type { CreateDirectory, DirectoryEntry, FileEntry, ListDirectory } from './types'
+import type { DirectoryEntry, FileEntry } from './types'
+
+const ListDirectoryBody = t.Object({
+	path: t.Optional(t.String()),
+	filter: t.Optional(t.String()),
+	directoryOnly: t.Optional(t.Boolean({ default: false })),
+})
+
+const CreateDirectoryBody = t.Object({
+	path: t.String(),
+	name: t.String(),
+	recursive: t.Optional(t.Boolean()),
+	mode: t.Optional(t.Union([t.String(), t.Integer()])),
+})
+
+export type ListDirectory = Static<typeof ListDirectoryBody>
+export type CreateDirectory = Static<typeof CreateDirectoryBody>
 
 const fileEntryComparator = (a: FileEntry, b: FileEntry) => {
 	if (a.directory === b.directory) return a.path.localeCompare(b.path)
@@ -12,9 +28,10 @@ const fileEntryComparator = (a: FileEntry, b: FileEntry) => {
 }
 
 export class FileSystemService {
-	async list(req?: ListDirectory) {
-		const path = (await findDirectory(req?.path)) || os.homedir()
-		const glob = req?.filter ? new Glob(req.filter) : undefined
+	// Lists the specified directory
+	async list(req: ListDirectory) {
+		const path = (await findDirectory(req.path)) || os.homedir()
+		const glob = req.filter ? new Glob(req.filter) : undefined
 		const entries: FileEntry[] = []
 
 		for (const entry of await fs.readdir(path, { withFileTypes: true })) {
@@ -23,7 +40,7 @@ export class FileSystemService {
 			const directory = entry.isDirectory()
 
 			if (directory || entry.isFile()) {
-				if (!req?.directoryOnly || directory) {
+				if (!req.directoryOnly || directory) {
 					if (!glob || directory || glob.match(name)) {
 						const { size, atimeMs: updatedAt } = await fs.stat(path)
 						entries.push({ name, path, directory, size, updatedAt })
@@ -37,6 +54,7 @@ export class FileSystemService {
 		return { path, tree: makeDirectoryTree(path), entries }
 	}
 
+	// Creates a new directory
 	async create(req: CreateDirectory) {
 		const path = join(req.path, req.name.trim())
 		await fs.mkdir(path, req)
@@ -45,12 +63,12 @@ export class FileSystemService {
 }
 
 export function fileSystem(fileSystemService: FileSystemService) {
-	const app = new Elysia({ prefix: '/file-system' })
-
-	app.post('/list', ({ body }) => fileSystemService.list(body as never))
-	app.post('/create', ({ body }) => fileSystemService.create(body as never))
-
-	return app
+	return (
+		new Elysia({ prefix: '/fileSystem' })
+			// File System
+			.post('/list', ({ body }) => fileSystemService.list(body), { body: ListDirectoryBody })
+			.post('/create', ({ body }) => fileSystemService.create(body), { body: CreateDirectoryBody })
+	)
 }
 
 export async function findDirectory(path?: string) {

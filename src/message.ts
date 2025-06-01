@@ -1,5 +1,8 @@
 import type { WebSocketHandler } from 'bun'
-import type { WebSocketMessage } from './types'
+
+export interface WebSocketMessage {
+	readonly type: string
+}
 
 export interface WebSocket {
 	sendText: (data: string) => void

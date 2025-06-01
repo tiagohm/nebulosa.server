@@ -1,17 +1,41 @@
-import Elysia from 'elysia'
-import { arcsec, deg, parseAngle } from 'nebulosa/src/angle'
+import Elysia, { type Static, t } from 'elysia'
+import { arcsec, parseAngle } from 'nebulosa/src/angle'
 import { astapPlateSolve } from 'nebulosa/src/astap'
 import { localAstrometryNetPlateSolve, novaAstrometryNetPlateSolve } from 'nebulosa/src/astrometrynet'
 import { type PlateSolution, fovFrom } from 'nebulosa/src/platesolver'
-import type { PlateSolveStart, PlateSolveStop, PlateSolved } from './types'
+
+const PlateSolveStartBody = t.Object({
+	id: t.String(),
+	radius: t.Optional(t.Union([t.String(), t.Number()])),
+	downsample: t.Optional(t.Integer()),
+	timeout: t.Optional(t.Integer()),
+	type: t.Union([t.Literal('ASTAP'), t.Literal('PIXINSIGHT'), t.Literal('ASTROMETRY_NET'), t.Literal('NOVA_ASTROMETRY_NET'), t.Literal('SIRIL')]),
+	executable: t.String(),
+	path: t.String(),
+	focalLength: t.Number(),
+	pixelSize: t.Number(),
+	apiUrl: t.Optional(t.String()),
+	apiKey: t.Optional(t.String()),
+	slot: t.Optional(t.Integer()),
+	blind: t.Boolean({ default: false }),
+	ra: t.Union([t.String(), t.Number()]),
+	dec: t.Union([t.String(), t.Number()]),
+})
+
+const PlateSolveStopBody = t.Object({
+	id: t.String(),
+})
+
+export type PlateSolveStart = Static<typeof PlateSolveStartBody>
+export type PlateSolveStop = Static<typeof PlateSolveStopBody>
 
 export class PlateSolverService {
 	private readonly tasks = new Map<string, AbortController>()
 
-	async start(req: PlateSolveStart): Promise<PlateSolved> {
+	async start(req: PlateSolveStart) {
 		const ra = parseAngle(req.ra, { isHour: true })
 		const dec = parseAngle(req.dec)
-		const radius = req.blind || !req.radius ? 0 : deg(req.radius)
+		const radius = req.blind || !req.radius ? 0 : parseAngle(req.radius)
 		const fov = arcsec(fovFrom(req.focalLength, req.pixelSize))
 
 		const aborter = new AbortController()
@@ -70,7 +94,7 @@ export class PlateSolverService {
 			}
 		}
 
-		return { solved: false }
+		return undefined
 	}
 
 	stop(req: PlateSolveStop) {
@@ -79,15 +103,10 @@ export class PlateSolverService {
 }
 
 export function plateSolver(plateSolverService: PlateSolverService) {
-	const app = new Elysia({ prefix: '/plate-solver' })
-
-	app.post('/start', ({ body }) => {
-		return plateSolverService.start(body as never)
-	})
-
-	app.post('/stop', ({ body }) => {
-		return plateSolverService.stop(body as never)
-	})
-
-	return app
+	return (
+		new Elysia({ prefix: '/plateSolver' })
+			// Plate Solver
+			.post('/start', ({ body }) => plateSolverService.start(body), { body: PlateSolveStartBody })
+			.post('/stop', ({ body }) => plateSolverService.stop(body), { body: PlateSolveStopBody })
+	)
 }
